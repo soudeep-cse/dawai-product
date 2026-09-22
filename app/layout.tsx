@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { CartProvider } from "@/contexts/CartContext";
 
 export const metadata: Metadata = {
   title: "দাওয়াই | Dawai - Medicine Delivery in Gazipur-Mymensingh",
@@ -22,7 +23,9 @@ export default function RootLayout({
       <body>
         <LanguageProvider>
           <AdminAuthProvider>
-            {children}
+            <CartProvider>
+              {children}
+            </CartProvider>
           </AdminAuthProvider>
         </LanguageProvider>
       </body>
