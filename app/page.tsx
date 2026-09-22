@@ -21,14 +21,14 @@ export default function Home() {
           <div className="absolute inset-0 bg-hero-pattern"></div>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             {/* Left: Hero copy */}
             <div className="space-y-6">
-              <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-                {t('hero.title')}
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight drop-shadow-lg">
+                {t('hero.title-secondary')}
               </h1>
-              <p className="text-lg md:text-xl text-primary-mint">
+              <p className="text-lg md:text-xl text-primary-mint drop-shadow-md">
                 {t('hero.subtitle')}
               </p>
 
@@ -38,7 +38,7 @@ export default function Home() {
                   href="/category"
                   className="bg-accent-coral hover:bg-accent-orange text-white px-8 py-3 rounded-lg font-semibold text-center transition-colors shadow-lg hover:shadow-xl"
                 >
-                  {t('hero.cta')}
+                  {t('hero.cta-secondary')}
                 </Link>
                 <Link
                   href="/prescription"
@@ -49,17 +49,14 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Hero image placeholder */}
+            {/* Right: Hero image */}
             <div className="hidden md:block">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 h-80 flex items-center justify-center">
-                {/* Placeholder for hero banner image */}
-                <div className="text-center">
-                  <div className="text-6xl mb-4">💊</div>
-                  <p className="text-sm opacity-75">
-                    {language === 'bn' ? 'হিরো ব্যানার ছবি এখানে যাবে' : 'Hero banner image goes here'}
-                  </p>
-                  <p className="text-xs opacity-50 mt-2">hero-banner.jpg</p>
-                </div>
+              <div className="relative h-96 rounded-2xl overflow-hidden shadow-2xl">
+                <img
+                  src="/banner-image.jpeg"
+                  alt="Dawai Medicine Delivery"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>

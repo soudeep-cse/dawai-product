@@ -2,6 +2,7 @@
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 
 export default function Header() {
@@ -11,17 +12,19 @@ export default function Header() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20 py-5">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="flex items-center">
-              {/* Placeholder for logo - replace with actual logo.png */}
-              <div className="w-10 h-10 bg-primary-teal rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                দ
-              </div>
-              <span className={`ml-2 text-xl font-bold text-primary-navy ${language === 'bn' ? 'bengali' : ''}`}>
-                {t('site.name')}
-              </span>
+              {/* Logo Image */}
+              <Image
+                src="/logo.png"
+                alt="Dawai Logo"
+                width={140}
+                height={70}
+                className="object-contain"
+                priority
+              />
             </div>
           </Link>
 

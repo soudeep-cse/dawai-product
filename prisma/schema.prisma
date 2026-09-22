@@ -1,0 +1,572 @@
+// Dawai - Complete Database Schema with Discount System
+// PostgreSQL via Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CORE CATALOG
+// ============================================
+
+model Category {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  nameBn        String
+  nameEn        String
+  descriptionBn String
+  descriptionEn String
+  icon          String
+  sortOrder     Int        @default(0)
+
+  // Category-level discount
+  hasDiscount   Boolean    @default(false)
+  discountType  DiscountType?
+  discountValue Decimal?   @db.Decimal(10, 2)
+  discountStartDate DateTime?
+  discountEndDate DateTime?
+
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  medicines     Medicine[]
+
+  @@index([slug])
+  @@index([isActive, sortOrder])
+}
+
+model Medicine {
+  id                  String          @id @default(cuid())
+
+  // Basic Info
+  nameBn              String
+  nameEn              String
+  genericNameBn       String?
+  genericNameEn       String?
+
+  // Category
+  categoryId          String
+  category            Category        @relation(fields: [categoryId], references: [id])
+  subcategory         String?
+
+  // Pricing with Discount
+  packSize            Int
+  originalPricePerPack    Decimal     @db.Decimal(10, 2)
+  pricePerPack        Decimal         @db.Decimal(10, 2)
+  pricePerUnit        Decimal         @db.Decimal(10, 2)
+
+  // Discount System
+  hasDiscount         Boolean         @default(false)
+  discountType        DiscountType?
+  discountValue       Decimal?        @db.Decimal(10, 2)
+  discountStartDate   DateTime?
+  discountEndDate     DateTime?
+
+  // Stock
+  stockQuantity       Int             @default(0)
+  lowStockThreshold   Int             @default(10)
+  reorderLevel        Int             @default(20)
+
+  // Product Details
+  requiresPrescription Boolean        @default(false)
+  dosageForm          String
+  strength            String?
+  manufacturer        String?
+  isSensitive         Boolean         @default(false)
+
+  // Images
+  primaryImage        String?
+  images              Json?
+
+  // SEO & Display
+  descriptionBn       String?         @db.Text
+  descriptionEn       String?         @db.Text
+  usageBn             String?         @db.Text
+  usageEn             String?         @db.Text
+  sideEffectsBn       String?         @db.Text
+  sideEffectsEn       String?         @db.Text
+
+  // Admin & Tracking
+  sku                 String?         @unique
+  barcode             String?         @unique
+  tags                String[]
+
+  featured            Boolean         @default(false)
+  isActive            Boolean         @default(true)
+
+  // Timestamps
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  createdBy           String?
+  lastModifiedBy      String?
+
+  // Relations
+  batches             MedicineBatch[]
+  orderItems          OrderItem[]
+  prescriptionItems   PrescriptionItem[]
+  refills             PrescriptionRefill[]
+
+  @@index([categoryId, isActive])
+  @@index([requiresPrescription])
+  @@index([stockQuantity])
+  @@index([featured, isActive])
+  @@index([hasDiscount, discountEndDate])
+}
+
+model MedicineBatch {
+  id            String   @id @default(cuid())
+  medicineId    String
+  medicine      Medicine @relation(fields: [medicineId], references: [id])
+
+  batchNumber   String   @unique
+  expiryDate    DateTime
+  quantity      Int
+  costPrice     Decimal  @db.Decimal(10, 2)
+  supplierName  String?
+  receivedDate  DateTime @default(now())
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([medicineId, expiryDate])
+  @@index([expiryDate, isActive])
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  BUY_X_GET_Y
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  PHARMACIST
+  OPERATOR
+}
+
+enum PaymentMethod {
+  COD
+  BKASH
+  NAGAD
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  PROCESSED
+  REJECTED
+}
+
+enum PrescriptionStatus {
+  PENDING_AI
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_CLARIFICATION
+}
+
+enum NotificationType {
+  NEW_ORDER
+  LOW_STOCK
+  NEW_PRESCRIPTION
+  EXPIRING_MEDICINE
+  CUSTOMER_QUERY
+  ORDER_CANCELLED
+}
+
+enum MessageType {
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  PRESCRIPTION_APPROVED
+  PRESCRIPTION_REJECTED
+  LOW_STOCK_ALERT
+  OTP_CODE
+  REFILL_REMINDER
+}
+
+// ============================================
+// DELIVERY & PAYMENT
+// ============================================
+
+model DeliveryZone {
+  id                String            @id @default(cuid())
+  slug              String            @unique
+  nameBn            String
+  nameEn            String
+  fee               Decimal           @db.Decimal(10, 2)
+  estimatedTimeBn   String
+  estimatedTimeEn   String
+  isActive          Boolean           @default(true)
+  sortOrder         Int               @default(0)
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  orders            Order[]
+  customerAddresses CustomerAddress[]
+  customers         Customer[]        @relation("CustomerDefaultZone")
+
+  @@index([isActive, sortOrder])
+}
+
+// ============================================
+// USERS & AUTH
+// ============================================
+
+model Admin {
+  id              String          @id @default(cuid())
+  username        String?         @unique
+  email           String?         @unique
+  phone           String?         @unique
+  passwordHash    String
+  name            String
+  role            AdminRole       @default(OPERATOR)
+  isActive        Boolean         @default(true)
+  lastLoginAt     DateTime?
+
+  // Password Reset
+  passwordResetToken    String?   @unique
+  passwordResetExpiresAt DateTime?
+
+  // Account Lockout (after 5 failed attempts)
+  failedLoginAttempts   Int       @default(0)
+  lockedUntil          DateTime?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  prescriptionsReviewed Prescription[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+
+  @@index([email])
+  @@index([username])
+  @@index([isActive, role])
+}
+
+model Customer {
+  id              String              @id @default(cuid())
+  phone           String              @unique
+  name            String?
+
+  otpCodeHash     String?
+  otpExpiresAt    DateTime?
+
+  defaultAddress  String?
+  defaultZoneId   String?
+  defaultZone     DeliveryZone?       @relation("CustomerDefaultZone", fields: [defaultZoneId], references: [id])
+
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  lastLoginAt     DateTime?
+
+  orders          Order[]
+  prescriptions   Prescription[]
+  addresses       CustomerAddress[]
+  refills         PrescriptionRefill[]
+
+  @@index([phone])
+}
+
+model CustomerAddress {
+  id          String       @id @default(cuid())
+  customerId  String
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  label       String
+  address     String
+
+  zoneId      String
+  zone        DeliveryZone @relation(fields: [zoneId], references: [id])
+
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([customerId])
+}
+
+// ============================================
+// ORDERS
+// ============================================
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNumber       String        @unique
+
+  customerId        String?
+  customer          Customer?     @relation(fields: [customerId], references: [id])
+
+  phone             String
+  address           String
+
+  zoneId            String
+  zone              DeliveryZone  @relation(fields: [zoneId], references: [id])
+
+  status            OrderStatus   @default(PENDING)
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus @default(PENDING)
+
+  subtotal          Decimal       @db.Decimal(10, 2)
+  deliveryFee       Decimal       @db.Decimal(10, 2)
+  total             Decimal       @db.Decimal(10, 2)
+
+  hasSensitiveItem  Boolean       @default(false)
+
+  prescriptionId    String?       @unique
+  prescription      Prescription? @relation(fields: [prescriptionId], references: [id])
+
+  notes             String?
+
+  // Delivery tracking
+  assignedRiderId   String?
+  assignedRider     DeliveryRider? @relation(fields: [assignedRiderId], references: [id])
+  assignedAt        DateTime?
+  pickedUpAt        DateTime?
+  deliveredAt       DateTime?
+
+  // Cancellation & Refund
+  cancelledAt       DateTime?
+  cancelledBy       String?
+  cancellationReason String?
+  refundStatus      RefundStatus?
+  refundAmount      Decimal?      @db.Decimal(10, 2)
+  refundedAt        DateTime?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  items             OrderItem[]
+
+  @@index([customerId])
+  @@index([status, createdAt])
+  @@index([orderNumber])
+  @@index([prescriptionId])
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  medicineId    String
+  medicine      Medicine @relation(fields: [medicineId], references: [id])
+
+  nameBn        String
+  nameEn        String
+  pricePerUnit  Decimal  @db.Decimal(10, 2)
+  isSensitive   Boolean
+
+  quantity      Int
+  lineTotal     Decimal  @db.Decimal(10, 2)
+
+  createdAt     DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model DeliveryRider {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String   @unique
+  vehicleType   String
+  vehicleNumber String?
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders        Order[]
+
+  @@index([isActive])
+}
+
+// ============================================
+// PRESCRIPTIONS
+// ============================================
+
+model Prescription {
+  id                String             @id @default(cuid())
+
+  customerId        String?
+  customer          Customer?          @relation(fields: [customerId], references: [id])
+
+  imageUrl          String
+
+  status            PrescriptionStatus @default(PENDING_AI)
+
+  aiExtractedData   Json?
+
+  pharmacistId      String?
+  pharmacist        Admin?             @relation(fields: [pharmacistId], references: [id])
+  pharmacistNotes   String?
+  reviewedAt        DateTime?
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  items             PrescriptionItem[]
+  order             Order?
+  refills           PrescriptionRefill[]
+
+  @@index([customerId, status])
+  @@index([status, createdAt])
+  @@index([pharmacistId])
+}
+
+model PrescriptionItem {
+  id                  String        @id @default(cuid())
+  prescriptionId      String
+  prescription        Prescription  @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  medicineId          String?
+  medicine            Medicine?     @relation(fields: [medicineId], references: [id])
+
+  rawText             String
+  dosage              String
+  frequency           String
+
+  isVerified          Boolean       @default(false)
+  pharmacistOverride  String?
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([prescriptionId])
+}
+
+model PrescriptionRefill {
+  id                      String       @id @default(cuid())
+
+  customerId              String
+  customer                Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  originalPrescriptionId  String
+  originalPrescription    Prescription @relation(fields: [originalPrescriptionId], references: [id])
+
+  medicineId              String
+  medicine                Medicine     @relation(fields: [medicineId], references: [id])
+
+  frequency               String
+  nextRefillDate          DateTime
+  isActive                Boolean      @default(true)
+  lastRefillDate          DateTime?
+
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  @@index([customerId, isActive])
+  @@index([nextRefillDate, isActive])
+}
+
+// ============================================
+// NOTIFICATIONS & AUDIT
+// ============================================
+
+model Notification {
+  id        String           @id @default(cuid())
+
+  adminId   String?
+  admin     Admin?           @relation(fields: [adminId], references: [id])
+
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+
+  createdAt DateTime         @default(now())
+
+  @@index([adminId, isRead])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+
+  adminId    String?
+  admin      Admin?   @relation(fields: [adminId], references: [id])
+
+  action     String
+  entityType String
+  entityId   String
+
+  oldValue   Json?
+  newValue   Json?
+
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// ============================================
+// SYSTEM SETTINGS
+// ============================================
+
+model SystemSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  type  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model MessageTemplate {
+  id        String      @id @default(cuid())
+
+  type      MessageType
+  channel   String
+
+  subjectBn String?
+  subjectEn String?
+  bodyBn    String
+  bodyEn    String
+
+  isActive  Boolean     @default(true)
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([type, channel])
+  @@index([isActive])
+}

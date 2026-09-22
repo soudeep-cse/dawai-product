@@ -42,17 +42,27 @@ export default function Footer() {
                   {t('category.baby-mom')}
                 </Link>
               </li>
+              <li>
+                <Link href="/category?cat=women" className="text-gray-300 hover:text-primary-mint transition-colors">
+                  {t('category.women')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/category?cat=emergency" className="text-gray-300 hover:text-primary-mint transition-colors">
+                  {t('category.emergency')}
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Company Info */}
           <div>
-            <h4 className="font-semibold mb-4">{t('footer.contact')}</h4>
+            <h4 className="font-semibold mb-4">{t('footer.company')}</h4>
             <ul className="space-y-2 text-sm text-gray-300">
-              <li>{t('footer.about')}</li>
-              <li>{t('footer.delivery')}</li>
-              <li>{t('footer.terms')}</li>
-              <li>{t('footer.privacy')}</li>
+              <li><Link href="/" className="text-gray-300 hover:text-primary-mint transition-colors">{t('footer.about')}</Link></li>
+              <li><Link href="/" className="text-gray-300 hover:text-primary-mint transition-colors">{t('footer.delivery')}</Link></li>
+              <li><Link href="/" className="text-gray-300 hover:text-primary-mint transition-colors">{t('footer.terms')}</Link></li>
+              <li><Link href="/" className="text-gray-300 hover:text-primary-mint transition-colors">{t('footer.privacy')}</Link></li>
             </ul>
           </div>
 

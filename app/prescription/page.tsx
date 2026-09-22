@@ -39,56 +39,59 @@ export default function PrescriptionPage() {
           </div>
 
           {/* How it works */}
-          <div className="mt-8 space-y-4">
-            <h3 className="font-semibold text-primary-navy">
-              {language === 'bn' ? 'এরপর কী হবে?' : 'What happens next?'}
+          <div className="mt-10 space-y-4">
+            <h3 className="text-lg font-bold text-primary-navy mb-6">
+              {language === 'bn' ? 'সুরক্ষিত প্রক্রিয়া: কীভাবে কাজ করে?' : 'Secure Process: How It Works'}
             </h3>
 
             <div className="space-y-3">
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary-mint rounded-full flex items-center justify-center text-white font-bold">
+              {/* Step 1: AI Analysis */}
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-primary-mint rounded-full flex items-center justify-center text-white font-bold text-lg">
                   1
                 </div>
-                <div>
-                  <h4 className="font-medium text-primary-navy">
-                    {language === 'bn' ? 'AI বিশ্লেষণ' : 'AI Analysis'}
+                <div className="flex-1">
+                  <h4 className="font-semibold text-primary-navy">
+                    {language === 'bn' ? '🤖 AI বিশ্লেষণ' : '🤖 AI Analysis'}
                   </h4>
-                  <p className="text-sm text-neutral-gray">
+                  <p className="text-sm text-neutral-gray mt-1">
                     {language === 'bn'
-                      ? 'আমাদের AI ওষুধের নাম, মাত্রা এবং নির্দেশনা বের করবে'
-                      : 'Our AI extracts medicine names, dosages, and instructions'}
+                      ? 'আমাদের AI প্রযুক্তি দ্রুত ওষুধের নাম, মাত্রা এবং নির্দেশনা চিনে নেয়'
+                      : 'Our AI technology quickly identifies medicine names, dosages, and instructions'}
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary-teal rounded-full flex items-center justify-center text-white font-bold">
+              {/* Step 2: Pharmacist Verification - HIGHLIGHTED */}
+              <div className="border-l-4 border-primary-teal bg-primary-teal/5 pl-4 py-3 rounded-r-lg flex gap-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-primary-teal rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
                   2
                 </div>
-                <div>
-                  <h4 className="font-medium text-primary-navy">
-                    {language === 'bn' ? 'ফার্মাসিস্ট যাচাই' : 'Pharmacist Verification'}
+                <div className="flex-1">
+                  <h4 className="font-bold text-primary-navy flex items-center gap-2">
+                    ✅ {language === 'bn' ? 'ফার্মাসিস্ট ১০০% যাচাই' : '✅ Pharmacist 100% Verifies'}
                   </h4>
-                  <p className="text-sm text-neutral-gray">
+                  <p className="text-sm text-neutral-dark mt-1 font-medium">
                     {language === 'bn'
-                      ? 'লাইসেন্সপ্রাপ্ত ফার্মাসিস্ট AI এর কাজ যাচাই করবেন এবং অনুমোদন দেবেন'
-                      : 'Licensed pharmacist reviews and approves the AI extraction'}
+                      ? 'প্রতিটি AI পড়া বিষয় একজন লাইসেন্সপ্রাপ্ত ফার্মাসিস্ট হাতে হাত মিলিয়ে যাচাই এবং অনুমোদন করেন — কোনো ভুল নেই'
+                      : 'Every AI reading is personally verified and approved by a licensed pharmacist — zero errors'}
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-accent-coral rounded-full flex items-center justify-center text-white font-bold">
+              {/* Step 3: Choose Duration */}
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-accent-coral rounded-full flex items-center justify-center text-white font-bold text-lg">
                   3
                 </div>
-                <div>
-                  <h4 className="font-medium text-primary-navy">
-                    {language === 'bn' ? 'সময়কাল ও পরিমাণ নির্বাচন' : 'Choose Duration & Quantity'}
+                <div className="flex-1">
+                  <h4 className="font-semibold text-primary-navy">
+                    {language === 'bn' ? '💊 সময়কাল ও পরিমাণ বাছুন' : '💊 Choose Duration & Quantity'}
                   </h4>
-                  <p className="text-sm text-neutral-gray">
+                  <p className="text-sm text-neutral-gray mt-1">
                     {language === 'bn'
-                      ? '৫, ৭, বা ১৪ দিনের চিকিৎসা — ঠিক প্রয়োজন অনুযায়ী সংখ্যা ও দাম দেখুন'
-                      : 'Pick 5, 7, or 14 days of treatment — see exact count and price'}
+                      ? '৫, ৭, বা ১৪ দিনের চিকিৎসা চয়ন করুন এবং ঠিক যতটুকু দরকার সেটাই দেখুন'
+                      : 'Pick 5, 7, or 14 days of treatment and see the exact count you need'}
                   </p>
                 </div>
               </div>

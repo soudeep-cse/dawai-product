@@ -6,17 +6,26 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MedicineCard from '@/components/MedicineCard';
-import { categories, medicines, Medicine, Category } from '@/data/medicines';
+import { useCategories } from '@/hooks/useCategories';
+import { useMedicines } from '@/hooks/useMedicines';
+import { useMedicineSearch } from '@/hooks/useMedicineSearch';
 
 function CategoryContent() {
   const { language, t } = useLanguage();
   const searchParams = useSearchParams();
-  const categoryParam = searchParams.get('cat') as Category | null;
+  const categoryParam = searchParams.get('cat');
 
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>(categoryParam || 'all');
-  const [filterStock, setFilterStock] = useState<'all' | 'in-stock'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string | 'all'>(categoryParam || 'all');
   const [filterPrescription, setFilterPrescription] = useState<'all' | 'prescription' | 'otc'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const { categories, loading: categoriesLoading } = useCategories();
+  const { medicines, loading: medicinesLoading } = useMedicines({
+    categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
+    requiresPrescription:
+      filterPrescription === 'prescription' ? true : filterPrescription === 'otc' ? false : undefined,
+  });
+  const { results: searchResults, search, clear: clearSearch } = useMedicineSearch();
 
   // Update selected category when URL param changes
   useEffect(() => {
@@ -25,40 +34,27 @@ function CategoryContent() {
     }
   }, [categoryParam]);
 
-  // Filter medicines
-  const filteredMedicines = medicines.filter((med) => {
-    // Category filter
-    if (selectedCategory !== 'all' && med.category !== selectedCategory) {
-      return false;
-    }
+  // Filter medicines based on local search
+  const filteredMedicines = searchQuery
+    ? searchResults.filter((med) => {
+        const query = searchQuery.toLowerCase();
+        const name = med.nameEn?.toLowerCase() || med.nameBn?.toLowerCase() || '';
+        const genericName = med.genericNameEn?.toLowerCase() || med.genericNameBn?.toLowerCase() || '';
+        return name.includes(query) || genericName.includes(query);
+      })
+    : medicines;
 
-    // Stock filter
-    if (filterStock === 'in-stock' && !med.inStock) {
-      return false;
+  useEffect(() => {
+    if (searchQuery && searchQuery.length >= 2) {
+      search(searchQuery);
+    } else {
+      clearSearch();
     }
+  }, [searchQuery, search, clearSearch]);
 
-    // Prescription filter
-    if (filterPrescription === 'prescription' && !med.requiresPrescription) {
-      return false;
-    }
-    if (filterPrescription === 'otc' && med.requiresPrescription) {
-      return false;
-    }
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const name = med.name[language].toLowerCase();
-      const genericName = med.genericName?.[language]?.toLowerCase() || '';
-      return name.includes(query) || genericName.includes(query);
-    }
-
-    return true;
-  });
-
-  const handleAddToCart = (medicine: Medicine, quantity: number) => {
-    // Mock add to cart - in real app, this would update cart state
-    alert(`Added ${quantity} ${medicine.name[language]} to cart! (Mock)`);
+  const handleAddToCart = (medicine: any, quantity: number) => {
+    const name = language === 'bn' ? medicine.nameBn : medicine.nameEn;
+    alert(`Added ${quantity} ${name} to cart! (Mock)`);
   };
 
   return (
@@ -67,13 +63,13 @@ function CategoryContent() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary-navy mb-2">
+        <div className="mb-10">
+          <h1 className="text-4xl md:text-5xl font-bold text-primary-navy mb-3">
             {selectedCategory === 'all'
               ? t('nav.categories')
-              : categories.find((c) => c.id === selectedCategory)?.name[language]}
+              : categories.find((c) => c.id === selectedCategory)?.[language === 'bn' ? 'nameBn' : 'nameEn']}
           </h1>
-          <p className="text-neutral-gray">
+          <p className="text-lg text-neutral-gray font-medium">
             {filteredMedicines.length} {language === 'bn' ? 'টি পণ্য পাওয়া গেছে' : 'products found'}
           </p>
         </div>
@@ -101,7 +97,7 @@ function CategoryContent() {
                     : 'bg-white text-neutral-dark hover:bg-neutral-light'
                 }`}
               >
-                {cat.icon} {cat.name[language]}
+                {cat.icon} {language === 'bn' ? cat.nameBn : cat.nameEn}
               </button>
             ))}
           </div>
@@ -109,7 +105,7 @@ function CategoryContent() {
 
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
               <input
@@ -119,18 +115,6 @@ function CategoryContent() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal"
               />
-            </div>
-
-            {/* Stock filter */}
-            <div>
-              <select
-                value={filterStock}
-                onChange={(e) => setFilterStock(e.target.value as 'all' | 'in-stock')}
-                className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal"
-              >
-                <option value="all">{t('filter.all')}</option>
-                <option value="in-stock">{t('filter.in-stock')}</option>
-              </select>
             </div>
 
             {/* Prescription filter */}
@@ -169,20 +153,41 @@ function CategoryContent() {
           </div>
         )}
 
-        {/* Products grid */}
-        {filteredMedicines.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredMedicines.map((medicine) => (
-              <MedicineCard key={medicine.id} medicine={medicine} onAddToCart={handleAddToCart} />
-            ))}
+        {/* Loading state */}
+        {(categoriesLoading || medicinesLoading) && (
+          <div className="text-center py-20 bg-white rounded-lg shadow-sm">
+            <div className="text-4xl mb-4">⏳</div>
+            <p className="text-neutral-gray">{language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}</p>
           </div>
-        ) : (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-neutral-dark mb-2">
+        )}
+
+        {/* Products grid */}
+        {!medicinesLoading && filteredMedicines.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 fade-in">
+            {filteredMedicines.map((medicine) => {
+              const mockMedicine = {
+                id: medicine.id,
+                name: { bn: medicine.nameBn, en: medicine.nameEn },
+                genericName: medicine.genericNameBn ? { bn: medicine.genericNameBn, en: medicine.genericNameEn } : undefined,
+                price: {
+                  original: Number(medicine.originalPricePerPack),
+                  current: Number(medicine.pricePerPack),
+                },
+                image: medicine.primaryImage || '/images/placeholder.jpg',
+                inStock: medicine.stockQuantity > 0,
+                requiresPrescription: medicine.requiresPrescription,
+                discount: medicine.hasDiscount ? { type: medicine.discountType, value: Number(medicine.discountValue) } : undefined,
+              };
+              return <MedicineCard key={medicine.id} medicine={mockMedicine} onAddToCart={handleAddToCart} />;
+            })}
+          </div>
+        ) : !medicinesLoading ? (
+          <div className="text-center py-20 bg-white rounded-lg shadow-sm fade-in">
+            <div className="text-7xl mb-4">🔍</div>
+            <h3 className="text-2xl font-bold text-primary-navy mb-3">
               {language === 'bn' ? 'কোনো পণ্য পাওয়া যায়নি' : 'No products found'}
             </h3>
-            <p className="text-neutral-gray">
+            <p className="text-lg text-neutral-gray mb-6">
               {language === 'bn'
                 ? 'অন্য ফিল্টার ব্যবহার করে দেখুন বা সব ক্যাটাগরি দেখুন'
                 : 'Try different filters or browse all categories'}
@@ -190,16 +195,15 @@ function CategoryContent() {
             <button
               onClick={() => {
                 setSelectedCategory('all');
-                setFilterStock('all');
                 setFilterPrescription('all');
                 setSearchQuery('');
               }}
-              className="mt-4 px-6 py-2 bg-primary-teal text-white rounded-lg hover:bg-primary-mint transition-colors"
+              className="px-8 py-3 bg-primary-teal text-white rounded-lg font-semibold hover:bg-primary-mint transition-all hover:shadow-lg"
             >
               {language === 'bn' ? 'ফিল্টার রিসেট করুন' : 'Reset Filters'}
             </button>
           </div>
-        )}
+        ) : null}
       </div>
 
       <Footer />

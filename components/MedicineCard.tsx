@@ -10,9 +10,28 @@ interface MedicineCardProps {
   onAddToCart?: (medicine: Medicine, quantity: number) => void;
 }
 
+// Icon mapping for different dosage forms
+const getDosageFormIcon = (dosageForm: string): string => {
+  const formLower = dosageForm.toLowerCase();
+  if (formLower.includes('tablet') || formLower.includes('capsule')) return '💊';
+  if (formLower.includes('syrup') || formLower.includes('liquid')) return '🧪';
+  if (formLower.includes('injection') || formLower.includes('vial')) return '💉';
+  if (formLower.includes('inhaler')) return '🌬️';
+  if (formLower.includes('insulin')) return '🩸';
+  if (formLower.includes('cream') || formLower.includes('ointment') || formLower.includes('gel')) return '🧴';
+  if (formLower.includes('diaper') || formLower.includes('wipes')) return '👶';
+  if (formLower.includes('pad') || formLower.includes('sanitary')) return '🩸';
+  if (formLower.includes('condom')) return '🛡️';
+  if (formLower.includes('powder') || formLower.includes('formula')) return '🥛';
+  if (formLower.includes('test-kit') || formLower.includes('kit')) return '🧬';
+  if (formLower.includes('wash') || formLower.includes('solution')) return '💧';
+  return '💊'; // default
+};
+
 export default function MedicineCard({ medicine, onAddToCart }: MedicineCardProps) {
   const { language, t } = useLanguage();
   const [quantity, setQuantity] = useState(1);
+  const [addedAnimation, setAddedAnimation] = useState(false);
 
   const handleQuantityChange = (delta: number) => {
     const newQuantity = Math.max(1, quantity + delta);
@@ -22,15 +41,18 @@ export default function MedicineCard({ medicine, onAddToCart }: MedicineCardProp
   const handleAddToCart = () => {
     if (onAddToCart) {
       onAddToCart(medicine, quantity);
+      // Brief animation feedback
+      setAddedAnimation(true);
+      setTimeout(() => setAddedAnimation(false), 600);
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden">
       {/* Image placeholder */}
       <Link href={`/medicine/${medicine.id}`}>
-        <div className="bg-gradient-to-br from-primary-mint/20 to-primary-teal/20 h-48 flex items-center justify-center cursor-pointer hover:from-primary-mint/30 hover:to-primary-teal/30 transition-colors">
-          <div className="text-6xl">💊</div>
+        <div className="bg-gradient-to-br from-primary-mint/20 to-primary-teal/20 h-48 flex items-center justify-center cursor-pointer hover:from-primary-mint/30 hover:to-primary-teal/30 transition-all duration-300">
+          <div className="text-6xl">{getDosageFormIcon(medicine.dosageForm)}</div>
         </div>
       </Link>
 
@@ -134,9 +156,13 @@ export default function MedicineCard({ medicine, onAddToCart }: MedicineCardProp
             {/* Add to cart button */}
             <button
               onClick={handleAddToCart}
-              className="flex-1 bg-primary-teal hover:bg-primary-mint text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className={`flex-1 bg-primary-teal hover:bg-primary-mint text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                addedAnimation
+                  ? 'bg-green-600 scale-95'
+                  : 'hover:shadow-md'
+              }`}
             >
-              {t('product.add-to-cart')}
+              {addedAnimation ? '✓ ' : ''}{t('product.add-to-cart')}
             </button>
           </div>
         )}
