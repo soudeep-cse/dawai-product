@@ -1,10 +1,12 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCategories } from '@/hooks/useCategories';
 import Link from 'next/link';
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { categories } = useCategories();
 
   return (
     <footer className="bg-primary-navy text-white mt-16">
@@ -22,36 +24,13 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4">{t('nav.categories')}</h4>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/category?cat=prescription" className="text-gray-300 hover:text-primary-mint transition-colors">
-                  {t('category.prescription')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/category?cat=daily-otc" className="text-gray-300 hover:text-primary-mint transition-colors">
-                  {t('category.daily-otc')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/category?cat=chronic" className="text-gray-300 hover:text-primary-mint transition-colors">
-                  {t('category.chronic')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/category?cat=baby-mom" className="text-gray-300 hover:text-primary-mint transition-colors">
-                  {t('category.baby-mom')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/category?cat=women" className="text-gray-300 hover:text-primary-mint transition-colors">
-                  {t('category.women')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/category?cat=emergency" className="text-gray-300 hover:text-primary-mint transition-colors">
-                  {t('category.emergency')}
-                </Link>
-              </li>
+              {categories.map((category) => (
+                <li key={category.id}>
+                  <Link href={`/category?cat=${category.id}`} className="text-gray-300 hover:text-primary-mint transition-colors">
+                    {language === 'bn' ? category.nameBn : category.nameEn}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

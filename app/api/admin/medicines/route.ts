@@ -11,7 +11,7 @@ const createMedicineSchema = z.object({
   genericNameBn: z.string().optional(),
   genericNameEn: z.string().optional(),
   categoryId: z.string().min(1),
-  subcategory: z.string().optional(),
+  subcategoryId: z.string().optional(),
   packSize: z.number().min(1),
   originalPricePerPack: z.number().min(0),
   pricePerPack: z.number().min(0),
@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           category: true,
+          subcategory: true,
         },
         skip,
         take: limit,
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
       } as any,
       include: {
         category: true,
+        subcategory: true,
       },
     });
 
