@@ -92,16 +92,34 @@ jobs:
             docker compose -f docker-compose.vps.yml down || true
 
             # Build and start new containers
+            # Note: migrations run automatically inside the container's own
+            # CMD (see Dockerfile) before Next.js boots - do NOT also run
+            # `prisma migrate deploy` from here, it races the container's
+            # own migration run for the same lock and spikes memory on
+            # small instances.
             echo "🔨 Building and starting containers..."
             docker compose -f docker-compose.vps.yml up -d --build
 
-            # Wait for database to be ready
-            echo "⏳ Waiting for database..."
-            sleep 10
+            # Wait for the app to be healthy - this only turns green once
+            # the container's internal migrate+boot sequence has finished
+            echo "🏥 Waiting for app to be healthy (migrations run internally)..."
+            MAX_ATTEMPTS=60
+            ATTEMPT=0
+            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+              if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+                echo "✅ App health check passed"
+                break
+              fi
+              ATTEMPT=$((ATTEMPT + 1))
+              echo "Waiting for app to be healthy... ($ATTEMPT/$MAX_ATTEMPTS)"
+              sleep 3
+            done
 
-            # Run migrations (fails loudly instead of masking real errors)
-            echo "🔄 Running database migrations..."
-            docker compose -f docker-compose.vps.yml exec -T app npx prisma migrate deploy
+            if [ "$ATTEMPT" -eq "$MAX_ATTEMPTS" ]; then
+              echo "❌ App did not become healthy in time"
+              docker compose -f docker-compose.vps.yml logs app | tail -50
+              exit 1
+            fi
 
             # Check if this is first deployment (no admin user exists)
             # Note: Prisma creates tables with quoted PascalCase names, so "Admin" must be quoted
@@ -114,20 +132,6 @@ jobs:
             else
               echo "✅ Database already seeded"
             fi
-
-            # Health check
-            echo "🏥 Running health checks..."
-            MAX_ATTEMPTS=30
-            ATTEMPT=0
-            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-              if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
-                echo "✅ App health check passed"
-                break
-              fi
-              ATTEMPT=$((ATTEMPT + 1))
-              echo "Waiting for app to be healthy... ($ATTEMPT/$MAX_ATTEMPTS)"
-              sleep 2
-            done
 
             # Show status
             echo "📊 Deployment status:"
