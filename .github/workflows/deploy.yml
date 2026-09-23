@@ -67,21 +67,21 @@ jobs:
 
             # Create .env.local from secrets (always create fresh)
             echo "⚙️  Creating .env.local from environment variables..."
-            cat > .env.local << EOF
-DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@postgres:5432/$DB_NAME"
-DB_USER="$DB_USER"
-DB_PASSWORD="$DB_PASSWORD"
-DB_NAME="$DB_NAME"
+            cat > .env.local <<ENVEOF
+DATABASE_URL="postgresql://\$DB_USER:\$DB_PASSWORD@postgres:5432/\$DB_NAME"
+DB_USER="\$DB_USER"
+DB_PASSWORD="\$DB_PASSWORD"
+DB_NAME="\$DB_NAME"
 NODE_ENV="production"
-JWT_SECRET="$JWT_SECRET"
-NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL"
-OPENAI_API_KEY="$OPENAI_API_KEY"
+JWT_SECRET="\$JWT_SECRET"
+NEXT_PUBLIC_APP_URL="\$NEXT_PUBLIC_APP_URL"
+OPENAI_API_KEY="\$OPENAI_API_KEY"
 SMS_PROVIDER="mock"
-SMS_API_KEY="$SMS_API_KEY"
+SMS_API_KEY="\$SMS_API_KEY"
 SMS_SENDER_ID="DAWAI"
 MAX_FILE_SIZE="5242880"
 UPLOAD_DIR="public/uploads"
-EOF
+ENVEOF
 
             # Create backups directory
             mkdir -p backups
