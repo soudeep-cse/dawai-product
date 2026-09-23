@@ -41,6 +41,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # Copy built Next.js app from builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/scripts ./scripts
 
 # Copy Prisma schema for migrations
 COPY prisma ./prisma
