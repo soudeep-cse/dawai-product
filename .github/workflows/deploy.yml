@@ -35,6 +35,14 @@ jobs:
 
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@master
+        env:
+          DB_USER: ${{ secrets.DB_USER || 'dawai_user' }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME || 'dawai' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'sk-test' }}
+          SMS_API_KEY: ${{ secrets.SMS_API_KEY || 'mock-key' }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -43,12 +51,37 @@ jobs:
             set -e
             echo "🚀 Starting deployment..."
 
+            # Clone if not exists, pull if exists
+            if [ ! -d "/opt/dawai-website" ]; then
+              echo "📥 First deployment: cloning repository..."
+              sudo git clone https://github.com/soudeep-cse/dawai-product.git /opt/dawai-website
+              sudo chown -R ubuntu:ubuntu /opt/dawai-website
+            else
+              echo "📥 Pulling latest code..."
+              cd /opt/dawai-website
+              git pull origin main
+            fi
+
             # Navigate to project directory
             cd /opt/dawai-website
 
-            # Pull latest code
-            echo "📥 Pulling latest code..."
-            git pull origin main
+            # Create .env.local from secrets (always create fresh)
+            echo "⚙️  Creating .env.local from environment variables..."
+            cat > .env.local << EOF
+DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@postgres:5432/$DB_NAME"
+DB_USER="$DB_USER"
+DB_PASSWORD="$DB_PASSWORD"
+DB_NAME="$DB_NAME"
+NODE_ENV="production"
+JWT_SECRET="$JWT_SECRET"
+NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL"
+OPENAI_API_KEY="$OPENAI_API_KEY"
+SMS_PROVIDER="mock"
+SMS_API_KEY="$SMS_API_KEY"
+SMS_SENDER_ID="DAWAI"
+MAX_FILE_SIZE="5242880"
+UPLOAD_DIR="public/uploads"
+EOF
 
             # Create backups directory
             mkdir -p backups
