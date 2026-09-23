@@ -45,6 +45,10 @@ COPY --from=builder /app/public ./public
 # Copy Prisma schema for migrations
 COPY prisma ./prisma
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 # Expose port
 EXPOSE 3000
 
@@ -54,4 +58,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start app with proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "-e", "require('child_process').execSync('npx prisma migrate deploy', {stdio: 'inherit'}); require('next/dist/cli/next-start')"]
+CMD ["./docker-entrypoint.sh"]
