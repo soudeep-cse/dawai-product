@@ -2,19 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { smsService } from '@/lib/sms-service';
 
 const prisma = new PrismaClient();
 
 const sendOtpSchema = z.object({
   phone: z.string().min(11).regex(/^01[0-9]/),
 });
-
-// Mock SMS sending - replace with real SMS service in production
-async function sendSMS(phone: string, otp: string) {
-  console.log(`[SMS] Sending OTP ${otp} to ${phone}`);
-  // In production, integrate with Twilio, bKash SMS, or local SMS provider
-  return true;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,8 +46,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Send OTP via SMS
-    await sendSMS(validated.phone, otp);
+    // Send OTP via SMS (real service or mock)
+    const smsSent = await smsService.sendOTP(validated.phone, otp);
+
+    if (!smsSent) {
+      console.warn(`Warning: SMS may not have been sent to ${validated.phone}, but OTP stored`);
+      // Don't fail - OTP is stored, user can still verify
+    }
 
     return NextResponse.json(
       {
