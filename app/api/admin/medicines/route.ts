@@ -103,12 +103,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = createMedicineSchema.parse(body);
 
+    const { discountStartDate, discountEndDate, ...restData } = validated;
+
     const medicine = await prisma.medicine.create({
       data: {
-        ...validated,
-        discountStartDate: validated.discountStartDate ? new Date(validated.discountStartDate) : null,
-        discountEndDate: validated.discountEndDate ? new Date(validated.discountEndDate) : null,
-      },
+        ...restData,
+        discountStartDate: discountStartDate ? new Date(discountStartDate) : null,
+        discountEndDate: discountEndDate ? new Date(discountEndDate) : null,
+      } as any,
       include: {
         category: true,
       },
