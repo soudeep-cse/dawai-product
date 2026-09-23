@@ -22,11 +22,12 @@ export default function AdminDashboardPage() {
   const fetchStats = async () => {
     try {
       const [ordersRes, medicinesRes] = await Promise.all([
-        fetch('/api/admin/medicines').then(r => r.json()),
+        fetch('/api/admin/orders').then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/admin/medicines').then(r => r.json()).catch(() => ({ data: [] })),
       ]);
 
       setStats({
-        totalOrders: 0,
+        totalOrders: ordersRes.data?.length || 0,
         totalSales: 0,
         pendingPrescriptions: 0,
         activeMedicines: medicinesRes.data?.length || 0,

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { serialize } from 'cookie';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,16 +7,13 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    response.headers.set(
-      'Set-Cookie',
-      serialize('customer-token', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 0,
-        path: '/',
-      })
-    );
+    response.cookies.set('customer-token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/',
+    });
 
     return response;
   } catch (error) {

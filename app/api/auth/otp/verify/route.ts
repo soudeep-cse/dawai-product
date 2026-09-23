@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { serialize } from 'cookie';
 import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
@@ -90,16 +89,13 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    response.headers.set(
-      'Set-Cookie',
-      serialize('customer-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        path: '/',
-      })
-    );
+    response.cookies.set('customer-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/',
+    });
 
     return response;
   } catch (error: any) {
