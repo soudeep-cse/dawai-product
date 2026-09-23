@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useCustomerOTP } from '@/hooks/useCustomerAuth';
 
-export default function CustomerLoginPage() {
+function CustomerLoginForm() {
   const { language } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/account';
   const { customer, isAuthenticated } = useCustomerAuth();
   const { sendOTP, loading: otpLoading, error: otpError, message: otpMessage } = useCustomerOTP();
 
@@ -22,9 +24,9 @@ export default function CustomerLoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && customer) {
-      router.push('/account');
+      router.push(redirectTo);
     }
-  }, [isAuthenticated, customer, router]);
+  }, [isAuthenticated, customer, router, redirectTo]);
 
   // Timer for OTP resend
   useEffect(() => {
@@ -128,7 +130,7 @@ export default function CustomerLoginPage() {
         setError(null);
         // Delay redirect to show success message
         setTimeout(() => {
-          router.push('/account');
+          router.push(redirectTo);
         }, 1000);
       } else {
         setError(result.error || t.error);
@@ -275,5 +277,13 @@ export default function CustomerLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CustomerLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <CustomerLoginForm />
+    </Suspense>
   );
 }

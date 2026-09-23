@@ -41,6 +41,7 @@ export default function MedicineDetailPage() {
   const { language, t } = useLanguage();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [purchaseMode, setPurchaseMode] = useState<'unit' | 'strip'>('unit');
   const [medicine, setMedicine] = useState<MedicineDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -112,15 +113,20 @@ export default function MedicineDetailPage() {
   const name = language === 'bn' ? medicine.nameBn : medicine.nameEn;
   const genericName = language === 'bn' ? medicine.genericNameBn : medicine.genericNameEn;
   const categoryName = language === 'bn' ? medicine.category.nameBn : medicine.category.nameEn;
-  const totalPrice = (Number(medicine.pricePerUnit) * quantity).toFixed(2);
+  const totalPrice = (
+    purchaseMode === 'strip'
+      ? Number(medicine.pricePerPack) * quantity
+      : Number(medicine.pricePerUnit) * quantity
+  ).toFixed(2);
   const filteredRelated = relatedMedicines.filter((m) => m.id !== medicine.id).slice(0, 4);
 
   const handleAddToCart = () => {
+    const unitQuantity = purchaseMode === 'strip' ? quantity * medicine.packSize : quantity;
     addItem({
       medicineId: medicine.id,
       medicineName: medicine.nameEn,
       medicineNameBn: medicine.nameBn,
-      quantity,
+      quantity: unitQuantity,
       pricePerUnit: Number(medicine.pricePerUnit),
       originalPrice: Number(medicine.originalPricePerPack) / medicine.packSize,
       hasDiscount: medicine.hasDiscount,
@@ -134,6 +140,11 @@ export default function MedicineDetailPage() {
 
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(Math.max(1, newQuantity));
+  };
+
+  const handlePurchaseModeChange = (mode: 'unit' | 'strip') => {
+    setPurchaseMode(mode);
+    setQuantity(1);
   };
 
   return (
@@ -236,9 +247,42 @@ export default function MedicineDetailPage() {
             {/* Quantity Selector */}
             {inStock && !medicine.requiresPrescription && (
               <div className="space-y-4">
+                {/* Purchase mode toggle */}
                 <div>
                   <label className="block text-sm font-medium text-primary-navy mb-2">
-                    {language === 'bn' ? 'পরিমাণ নির্বাচন করুন' : 'Select Quantity'}
+                    {language === 'bn' ? 'কীভাবে কিনতে চান?' : 'How would you like to buy?'}
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePurchaseModeChange('unit')}
+                      className={`flex-1 px-4 py-2 rounded-lg font-medium border-2 transition-colors ${
+                        purchaseMode === 'unit'
+                          ? 'bg-primary-teal text-white border-primary-teal'
+                          : 'bg-white text-primary-navy border-neutral-light hover:border-primary-teal'
+                      }`}
+                    >
+                      {language === 'bn' ? `প্রতি ${medicine.dosageForm}` : `Per ${medicine.dosageForm}`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePurchaseModeChange('strip')}
+                      className={`flex-1 px-4 py-2 rounded-lg font-medium border-2 transition-colors ${
+                        purchaseMode === 'strip'
+                          ? 'bg-primary-teal text-white border-primary-teal'
+                          : 'bg-white text-primary-navy border-neutral-light hover:border-primary-teal'
+                      }`}
+                    >
+                      {language === 'bn' ? 'প্রতি স্ট্রিপ' : 'Per Strip'} ({medicine.packSize} {medicine.dosageForm}{medicine.packSize > 1 ? 's' : ''})
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary-navy mb-2">
+                    {purchaseMode === 'strip'
+                      ? (language === 'bn' ? 'কয়টি স্ট্রিপ?' : 'How many strips?')
+                      : (language === 'bn' ? 'পরিমাণ নির্বাচন করুন' : 'Select Quantity')}
                   </label>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center border-2 border-primary-teal rounded-lg">
@@ -263,8 +307,9 @@ export default function MedicineDetailPage() {
                       </button>
                     </div>
                     <div className="text-sm text-neutral-gray">
-                      {quantity} {medicine.dosageForm}
-                      {quantity > 1 && 's'}
+                      {purchaseMode === 'strip'
+                        ? `${quantity} strip${quantity > 1 ? 's' : ''} = ${quantity * medicine.packSize} ${medicine.dosageForm}${quantity * medicine.packSize > 1 ? 's' : ''}`
+                        : `${quantity} ${medicine.dosageForm}${quantity > 1 ? 's' : ''}`}
                     </div>
                   </div>
                 </div>

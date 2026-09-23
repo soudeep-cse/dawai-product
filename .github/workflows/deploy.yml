@@ -133,6 +133,10 @@ jobs:
               echo "✅ Database already seeded"
             fi
 
+            # Delivery zones seed is upsert-based (idempotent) - safe to run every deploy
+            echo "🚚 Ensuring delivery zones are seeded..."
+            docker compose -f docker-compose.vps.yml exec -T app node scripts/seed-delivery-zones.js
+
             # Show status
             echo "📊 Deployment status:"
             docker compose -f docker-compose.vps.yml ps

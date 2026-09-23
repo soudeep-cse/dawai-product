@@ -49,10 +49,14 @@ export default function MedicineCard({ medicine, onAddToCart }: MedicineCardProp
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden">
-      {/* Image placeholder */}
+      {/* Image */}
       <Link href={`/medicine/${medicine.id}`}>
-        <div className="bg-gradient-to-br from-primary-mint/20 to-primary-teal/20 h-48 flex items-center justify-center cursor-pointer hover:from-primary-mint/30 hover:to-primary-teal/30 transition-all duration-300">
-          <div className="text-6xl">{getDosageFormIcon(medicine.dosageForm)}</div>
+        <div className="bg-gradient-to-br from-primary-mint/20 to-primary-teal/20 h-48 flex items-center justify-center cursor-pointer hover:from-primary-mint/30 hover:to-primary-teal/30 transition-all duration-300 overflow-hidden">
+          {medicine.image && medicine.image !== '/images/placeholder.jpg' ? (
+            <img src={medicine.image} alt={medicine.name[language]} className="w-full h-full object-cover" />
+          ) : (
+            <div className="text-6xl">{getDosageFormIcon(medicine.dosageForm)}</div>
+          )}
         </div>
       </Link>
 

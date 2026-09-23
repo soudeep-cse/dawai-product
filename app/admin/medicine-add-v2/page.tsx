@@ -404,7 +404,7 @@ export default function MedicineAddV2Page() {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">💰 Pricing & Stock</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Original Price (TK) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Original Price / Strip (TK) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -415,7 +415,7 @@ export default function MedicineAddV2Page() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Sale Price (TK) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Sale Price / Strip (TK) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -426,7 +426,7 @@ export default function MedicineAddV2Page() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Per Unit Price (TK) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Price / Unit (TK) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -435,19 +435,28 @@ export default function MedicineAddV2Page() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Sale Price ÷ Pack Size, e.g., ৳12 strip ÷ 10 tablets = ৳1.20/unit
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Pack Size *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Pack Size (units per strip) *
+                    </label>
                     <input
                       type="number"
+                      min="1"
                       value={formData.packSize}
                       onChange={(e) => setFormData({ ...formData, packSize: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      How many {formData.dosageForm.toLowerCase()}s are in one strip/pack? e.g., Napa has 10 tablets per strip → enter 10.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>

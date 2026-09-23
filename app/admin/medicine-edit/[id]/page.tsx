@@ -315,7 +315,7 @@ export default function MedicineEditPage() {
           {/* Pricing */}
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pack Size *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Pack Size (units/strip) *</label>
               <input
                 type="number"
                 required

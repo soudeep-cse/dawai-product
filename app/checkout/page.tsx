@@ -4,15 +4,18 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useDeliveryZones } from '@/hooks/useDeliveryZones';
 import { useCheckout } from '@/hooks/useCheckout';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Link from 'next/link';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotal, getSubtotal, clearCart } = useCart();
   const { language } = useLanguage();
+  const { customer, isAuthenticated } = useCustomerAuth();
   const { zones } = useDeliveryZones();
   const { createOrder, loading, error, orderId } = useCheckout();
 
@@ -33,6 +36,19 @@ export default function CheckoutPage() {
       router.push('/cart');
     }
   }, [items, router]);
+
+  // Pre-fill from logged-in customer profile
+  useEffect(() => {
+    if (customer) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: prev.customerName || customer.name || '',
+        customerPhone: prev.customerPhone || customer.phone || '',
+        deliveryAddress: prev.deliveryAddress || customer.defaultAddress || '',
+        deliveryZoneId: prev.deliveryZoneId || customer.defaultZoneId || '',
+      }));
+    }
+  }, [customer]);
 
   if (success && orderId) {
     return (
@@ -107,9 +123,27 @@ export default function CheckoutPage() {
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             {validationError && <div className="p-4 bg-red-100 text-red-800 rounded-lg">{validationError}</div>}
             {error && <div className="p-4 bg-red-100 text-red-800 rounded-lg">{error}</div>}
+            {!isAuthenticated && (
+              <div className="bg-primary-teal/10 border border-primary-teal rounded-lg p-4 flex items-center justify-between flex-wrap gap-2">
+                <p className="text-sm text-primary-navy">
+                  {language === 'bn' ? 'আগে থেকে অ্যাকাউন্ট আছে?' : 'Already have an account?'}
+                </p>
+                <Link
+                  href="/login?redirect=/checkout"
+                  className="text-sm font-semibold text-primary-teal hover:text-primary-navy underline"
+                >
+                  {language === 'bn' ? 'লগইন করুন' : 'Login'}
+                </Link>
+              </div>
+            )}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-2xl font-bold text-primary-navy mb-4">
                 {language === 'bn' ? 'ব্যক্তিগত তথ্য' : 'Personal Information'}
+                {isAuthenticated && (
+                  <span className="ml-2 text-sm font-normal text-green-600">
+                    ({language === 'bn' ? 'লগইন করা আছে' : 'Logged in'})
+                  </span>
+                )}
               </h2>
               <div className="space-y-4">
                 <input type="text" placeholder={language === 'bn' ? 'আপনার নাম' : 'Full Name'} value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required />
