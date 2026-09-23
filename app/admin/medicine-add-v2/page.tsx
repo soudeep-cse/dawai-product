@@ -32,6 +32,8 @@ export default function MedicineAddV2Page() {
   const [formData, setFormData] = useState({
     nameEn: '',
     nameBn: '',
+    genericNameEn: '',
+    genericNameBn: '',
     categoryId: '',
     subcategoryId: '',
     pricePerPack: '',
@@ -41,7 +43,7 @@ export default function MedicineAddV2Page() {
     stockQuantity: '0',
     dosageForm: 'Tablet',
     manufacturer: '',
-    description: '',
+    strength: '',
     hasDiscount: false,
     discountType: 'PERCENTAGE',
     discountValue: '',
@@ -333,12 +335,45 @@ export default function MedicineAddV2Page() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Generic Name (English)</label>
+                    <input
+                      type="text"
+                      value={formData.genericNameEn}
+                      onChange={(e) => setFormData({ ...formData, genericNameEn: e.target.value })}
+                      placeholder="e.g., Paracetamol"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">জেনেরিক নাম (Bengali)</label>
+                    <input
+                      type="text"
+                      value={formData.genericNameBn}
+                      onChange={(e) => setFormData({ ...formData, genericNameBn: e.target.value })}
+                      placeholder="e.g., প্যারাসিটামল"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Manufacturer</label>
                     <input
                       type="text"
                       value={formData.manufacturer}
                       onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                       placeholder="Brand/Manufacturer name"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Strength</label>
+                    <input
+                      type="text"
+                      value={formData.strength}
+                      onChange={(e) => setFormData({ ...formData, strength: e.target.value })}
+                      placeholder="e.g., 500mg"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     />
                   </div>
@@ -491,6 +526,8 @@ export default function MedicineAddV2Page() {
                     setFormData({
                       nameEn: '',
                       nameBn: '',
+                      genericNameEn: '',
+                      genericNameBn: '',
                       categoryId: '',
                       subcategoryId: '',
                       pricePerPack: '',
@@ -500,7 +537,7 @@ export default function MedicineAddV2Page() {
                       stockQuantity: '0',
                       dosageForm: 'Tablet',
                       manufacturer: '',
-                      description: '',
+                      strength: '',
                       hasDiscount: false,
                       discountType: 'PERCENTAGE',
                       discountValue: '',
