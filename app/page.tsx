@@ -4,11 +4,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CategoryCard from '@/components/CategoryCard';
-import { categories } from '@/data/medicines';
+import { useCategories } from '@/hooks/useCategories';
 import Link from 'next/link';
 
 export default function Home() {
   const { language, t } = useLanguage();
+  const { categories } = useCategories();
 
   return (
     <div className="min-h-screen bg-neutral-light">
@@ -74,8 +75,8 @@ export default function Home() {
             <CategoryCard
               key={category.id}
               id={category.id}
-              name={category.name}
-              description={category.description}
+              name={{ bn: category.nameBn, en: category.nameEn }}
+              description={{ bn: category.descriptionBn, en: category.descriptionEn }}
               icon={category.icon}
             />
           ))}
