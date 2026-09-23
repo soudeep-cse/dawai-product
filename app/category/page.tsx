@@ -83,64 +83,68 @@ function CategoryContent() {
           </p>
         </div>
 
-        {/* Category tabs */}
-        <div className="mb-6 overflow-x-auto">
-          <div className="flex gap-2 min-w-max pb-2">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                selectedCategory === 'all'
-                  ? 'bg-primary-teal text-white'
-                  : 'bg-white text-neutral-dark hover:bg-neutral-light'
-              }`}
-            >
-              {t('filter.all')}
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                  selectedCategory === cat.id
-                    ? 'bg-primary-teal text-white'
-                    : 'bg-white text-neutral-dark hover:bg-neutral-light'
-                }`}
-              >
-                {cat.icon} {language === 'bn' ? cat.nameBn : cat.nameEn}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Subcategory tabs */}
-        {selectedCategory !== 'all' && subcategories.length > 0 && (
+        {selectedCategory === 'all' ? (
+          /* Category tabs (top level) */
           <div className="mb-6 overflow-x-auto">
             <div className="flex gap-2 min-w-max pb-2">
               <button
-                onClick={() => setSelectedSubcategory('all')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
-                  selectedSubcategory === 'all'
-                    ? 'bg-primary-navy text-white border-primary-navy'
-                    : 'bg-white text-neutral-dark border-neutral-light hover:bg-neutral-light'
-                }`}
+                onClick={() => setSelectedCategory('all')}
+                className="px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap bg-primary-teal text-white"
               >
                 {t('filter.all')}
               </button>
-              {subcategories.map((sub) => (
+              {categories.map((cat) => (
                 <button
-                  key={sub.id}
-                  onClick={() => setSelectedSubcategory(sub.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
-                    selectedSubcategory === sub.id
-                      ? 'bg-primary-navy text-white border-primary-navy'
-                      : 'bg-white text-neutral-dark border-neutral-light hover:bg-neutral-light'
-                  }`}
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className="px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap bg-white text-neutral-dark hover:bg-neutral-light"
                 >
-                  {sub.icon} {language === 'bn' ? sub.nameBn : sub.nameEn}
+                  {cat.icon} {language === 'bn' ? cat.nameBn : cat.nameEn}
                 </button>
               ))}
             </div>
           </div>
+        ) : (
+          <>
+            {/* Back to all categories */}
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className="mb-4 text-primary-teal hover:text-primary-navy font-medium flex items-center gap-1"
+            >
+              ← {language === 'bn' ? 'সব ক্যাটাগরি' : 'All Categories'}
+            </button>
+
+            {/* Subcategory tabs (scoped to the selected category only) */}
+            {subcategories.length > 0 && (
+              <div className="mb-6 overflow-x-auto">
+                <div className="flex gap-2 min-w-max pb-2">
+                  <button
+                    onClick={() => setSelectedSubcategory('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
+                      selectedSubcategory === 'all'
+                        ? 'bg-primary-navy text-white border-primary-navy'
+                        : 'bg-white text-neutral-dark border-neutral-light hover:bg-neutral-light'
+                    }`}
+                  >
+                    {t('filter.all')}
+                  </button>
+                  {subcategories.map((sub) => (
+                    <button
+                      key={sub.id}
+                      onClick={() => setSelectedSubcategory(sub.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
+                        selectedSubcategory === sub.id
+                          ? 'bg-primary-navy text-white border-primary-navy'
+                          : 'bg-white text-neutral-dark border-neutral-light hover:bg-neutral-light'
+                      }`}
+                    >
+                      {sub.icon} {language === 'bn' ? sub.nameBn : sub.nameEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Filters and Search */}
