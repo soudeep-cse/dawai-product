@@ -12,6 +12,7 @@ export async function GET(
       where: { id: params.id },
       include: {
         category: true,
+        subcategory: true,
         batches: {
           where: { expiryDate: { gt: new Date() } },
           select: {

@@ -1,22 +1,94 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
+import { useMedicines } from '@/hooks/useMedicines';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MedicineCard from '@/components/MedicineCard';
-import { getMedicineById, medicines, Medicine } from '@/data/medicines';
+
+interface MedicineDetail {
+  id: string;
+  nameBn: string;
+  nameEn: string;
+  genericNameBn?: string;
+  genericNameEn?: string;
+  originalPricePerPack: number;
+  pricePerPack: number;
+  pricePerUnit: number;
+  packSize: number;
+  dosageForm: string;
+  strength?: string;
+  manufacturer?: string;
+  stockQuantity: number;
+  requiresPrescription: boolean;
+  isSensitive: boolean;
+  hasDiscount: boolean;
+  discountType?: string;
+  discountValue?: number;
+  primaryImage?: string;
+  descriptionBn?: string;
+  descriptionEn?: string;
+  category: { id: string; nameBn: string; nameEn: string };
+  subcategory?: { id: string; nameBn: string; nameEn: string; icon: string };
+}
 
 export default function MedicineDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { language, t } = useLanguage();
+  const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [medicine, setMedicine] = useState<MedicineDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [added, setAdded] = useState(false);
 
-  const medicine = getMedicineById(params.id as string);
+  useEffect(() => {
+    const fetchMedicine = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/medicines/${params.id}`);
+        const result = await res.json();
 
-  if (!medicine) {
+        if (result.success) {
+          setMedicine(result.data);
+          setNotFound(false);
+        } else {
+          setNotFound(true);
+        }
+      } catch (error) {
+        console.error('Medicine fetch error:', error);
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (params.id) fetchMedicine();
+  }, [params.id]);
+
+  const { medicines: relatedMedicines } = useMedicines({
+    categoryId: medicine?.category.id,
+    limit: 5,
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-light">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-neutral-gray">{language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (notFound || !medicine) {
     return (
       <div className="min-h-screen bg-neutral-light">
         <Header />
@@ -36,13 +108,28 @@ export default function MedicineDetailPage() {
     );
   }
 
-  const totalPrice = (medicine.pricePerUnit * quantity).toFixed(2);
-  const relatedMedicines = medicines
-    .filter(m => m.category === medicine.category && m.id !== medicine.id)
-    .slice(0, 4);
+  const inStock = medicine.stockQuantity > 0;
+  const name = language === 'bn' ? medicine.nameBn : medicine.nameEn;
+  const genericName = language === 'bn' ? medicine.genericNameBn : medicine.genericNameEn;
+  const categoryName = language === 'bn' ? medicine.category.nameBn : medicine.category.nameEn;
+  const totalPrice = (Number(medicine.pricePerUnit) * quantity).toFixed(2);
+  const filteredRelated = relatedMedicines.filter((m) => m.id !== medicine.id).slice(0, 4);
 
   const handleAddToCart = () => {
-    alert(`Added ${quantity} ${medicine.name[language]} to cart! (Mock)`);
+    addItem({
+      medicineId: medicine.id,
+      medicineName: medicine.nameEn,
+      medicineNameBn: medicine.nameBn,
+      quantity,
+      pricePerUnit: Number(medicine.pricePerUnit),
+      originalPrice: Number(medicine.originalPricePerPack) / medicine.packSize,
+      hasDiscount: medicine.hasDiscount,
+      discountType: medicine.discountType,
+      discountValue: medicine.discountValue ? Number(medicine.discountValue) : undefined,
+      image: medicine.primaryImage,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
   };
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -60,20 +147,22 @@ export default function MedicineDetailPage() {
             {t('nav.home')}
           </button>
           <span>/</span>
-          <button onClick={() => router.push(`/category?cat=${medicine.category}`)} className="hover:text-primary-teal">
-            {language === 'bn'
-              ? medicines.find(m => m.category === medicine.category)?.category
-              : medicine.category}
+          <button onClick={() => router.push(`/category?cat=${medicine.category.id}`)} className="hover:text-primary-teal">
+            {categoryName}
           </button>
           <span>/</span>
-          <span className="text-primary-navy">{medicine.name[language]}</span>
+          <span className="text-primary-navy">{name}</span>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           {/* Left: Image */}
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="bg-gradient-to-br from-primary-mint/20 to-primary-teal/20 rounded-lg h-96 flex items-center justify-center">
-              <div className="text-9xl">💊</div>
+            <div className="bg-gradient-to-br from-primary-mint/20 to-primary-teal/20 rounded-lg h-96 flex items-center justify-center overflow-hidden">
+              {medicine.primaryImage ? (
+                <img src={medicine.primaryImage} alt={name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-9xl">💊</div>
+              )}
             </div>
           </div>
 
@@ -81,19 +170,13 @@ export default function MedicineDetailPage() {
           <div className="space-y-6">
             {/* Name */}
             <div>
-              <h1 className="text-3xl font-bold text-primary-navy mb-2">
-                {medicine.name[language]}
-              </h1>
-              {medicine.genericName && (
-                <p className="text-lg text-neutral-gray">
-                  {medicine.genericName[language]}
-                </p>
-              )}
+              <h1 className="text-3xl font-bold text-primary-navy mb-2">{name}</h1>
+              {genericName && <p className="text-lg text-neutral-gray">{genericName}</p>}
             </div>
 
             {/* Badges */}
             <div className="flex flex-wrap gap-2">
-              {medicine.inStock ? (
+              {inStock ? (
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
                   {t('product.in-stock')}
                 </span>
@@ -121,13 +204,13 @@ export default function MedicineDetailPage() {
             <div className="bg-gradient-to-br from-primary-teal/10 to-primary-mint/10 rounded-xl p-6 space-y-3">
               <div className="flex justify-between items-baseline">
                 <span className="text-neutral-gray">{t('product.per-unit')}</span>
-                <span className="text-3xl font-bold text-primary-teal">৳{medicine.pricePerUnit.toFixed(2)}</span>
+                <span className="text-3xl font-bold text-primary-teal">৳{Number(medicine.pricePerUnit).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-baseline text-sm">
                 <span className="text-neutral-gray">
                   {t('product.per-strip')} ({medicine.packSize} {t('product.units')})
                 </span>
-                <span className="text-neutral-gray">৳{medicine.pricePerPack}</span>
+                <span className="text-neutral-gray">৳{Number(medicine.pricePerPack)}</span>
               </div>
             </div>
 
@@ -151,7 +234,7 @@ export default function MedicineDetailPage() {
             </div>
 
             {/* Quantity Selector */}
-            {medicine.inStock && !medicine.requiresPrescription && (
+            {inStock && !medicine.requiresPrescription && (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-primary-navy mb-2">
@@ -199,8 +282,16 @@ export default function MedicineDetailPage() {
                   onClick={handleAddToCart}
                   className="w-full bg-primary-teal hover:bg-primary-mint text-white px-8 py-4 rounded-lg font-bold text-lg transition-colors shadow-lg hover:shadow-xl"
                 >
-                  {t('product.add-to-cart')}
+                  {added ? (language === 'bn' ? '✓ কার্টে যোগ হয়েছে' : '✓ Added to Cart') : t('product.add-to-cart')}
                 </button>
+              </div>
+            )}
+
+            {!inStock && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <p className="text-red-700 font-semibold">
+                  {language === 'bn' ? 'বর্তমানে স্টক শেষ' : 'Currently out of stock'}
+                </p>
               </div>
             )}
 
@@ -265,18 +356,45 @@ export default function MedicineDetailPage() {
                 <p className="text-neutral-gray">{medicine.manufacturer}</p>
               </div>
             )}
+
+            {(medicine.descriptionBn || medicine.descriptionEn) && (
+              <div className="md:col-span-2">
+                <h3 className="font-semibold text-primary-navy mb-2">
+                  {language === 'bn' ? 'বিবরণ' : 'Description'}
+                </h3>
+                <p className="text-neutral-gray">
+                  {language === 'bn' ? medicine.descriptionBn : medicine.descriptionEn}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Related Medicines */}
-        {relatedMedicines.length > 0 && (
+        {filteredRelated.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-primary-navy mb-6">
               {language === 'bn' ? 'সম্পর্কিত ওষুধ' : 'Related Medicines'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedMedicines.map((med) => (
-                <MedicineCard key={med.id} medicine={med} />
+              {filteredRelated.map((med) => (
+                <MedicineCard
+                  key={med.id}
+                  medicine={{
+                    id: med.id,
+                    name: { bn: med.nameBn, en: med.nameEn },
+                    genericName: med.genericNameBn && med.genericNameEn ? { bn: med.genericNameBn, en: med.genericNameEn } : undefined,
+                    category: 'prescription' as const,
+                    subcategory: med.category?.nameEn || '',
+                    packSize: med.packSize,
+                    pricePerPack: Number(med.pricePerPack),
+                    pricePerUnit: Number(med.pricePerUnit),
+                    dosageForm: med.dosageForm,
+                    image: med.primaryImage || '/images/placeholder.jpg',
+                    inStock: med.stockQuantity > 0,
+                    requiresPrescription: med.requiresPrescription,
+                  }}
+                />
               ))}
             </div>
           </div>
