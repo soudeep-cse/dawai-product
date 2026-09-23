@@ -21,6 +21,7 @@ export default function MedicineListPage() {
   const router = useRouter();
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMedicines();
@@ -37,6 +38,26 @@ export default function MedicineListPage() {
       console.error('Error fetching medicines:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete "${name}"? This cannot be undone from here.`)) return;
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/medicines/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setMedicines((prev) => prev.filter((m) => m.id !== id));
+      } else {
+        alert(data.error || 'Failed to delete medicine');
+      }
+    } catch (error) {
+      console.error('Error deleting medicine:', error);
+      alert('Failed to delete medicine');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -153,8 +174,12 @@ export default function MedicineListPage() {
                     >
                       ✏️ Edit
                     </button>
-                    <button className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition text-sm">
-                      🗑️ Delete
+                    <button
+                      onClick={() => handleDelete(medicine.id, medicine.nameEn)}
+                      disabled={deletingId === medicine.id}
+                      className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+                    >
+                      {deletingId === medicine.id ? '⏳ Deleting...' : '🗑️ Delete'}
                     </button>
                   </div>
                 </div>

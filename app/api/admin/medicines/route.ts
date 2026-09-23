@@ -48,11 +48,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
+    const includeInactive = searchParams.get('includeInactive') === 'true';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
     const where: any = {};
+    if (!includeInactive) where.isActive = true;
     if (categoryId) where.categoryId = categoryId;
 
     const [medicines, total] = await Promise.all([

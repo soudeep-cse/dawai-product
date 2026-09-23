@@ -11,7 +11,7 @@ const updateMedicineSchema = z.object({
   genericNameBn: z.string().optional(),
   genericNameEn: z.string().optional(),
   categoryId: z.string().min(1).optional(),
-  subcategory: z.string().optional(),
+  subcategoryId: z.string().optional(),
   packSize: z.number().min(1).optional(),
   originalPricePerPack: z.number().min(0).optional(),
   pricePerPack: z.number().min(0).optional(),
@@ -54,6 +54,7 @@ export async function GET(
       where: { id: params.id },
       include: {
         category: true,
+        subcategory: true,
         batches: true,
       },
     });
@@ -111,6 +112,7 @@ export async function PATCH(
       data: updateData,
       include: {
         category: true,
+        subcategory: true,
       },
     });
 
