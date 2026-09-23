@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MedicineCard from '@/components/MedicineCard';
 import { useCategories } from '@/hooks/useCategories';
+import { useSubcategories } from '@/hooks/useSubcategories';
 import { useMedicines } from '@/hooks/useMedicines';
 import { useMedicineSearch } from '@/hooks/useMedicineSearch';
 
@@ -16,12 +17,15 @@ function CategoryContent() {
   const categoryParam = searchParams.get('cat');
 
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>(categoryParam || 'all');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | 'all'>('all');
   const [filterPrescription, setFilterPrescription] = useState<'all' | 'prescription' | 'otc'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const { categories, loading: categoriesLoading } = useCategories();
+  const { subcategories } = useSubcategories(selectedCategory !== 'all' ? selectedCategory : undefined);
   const { medicines, loading: medicinesLoading } = useMedicines({
     categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
+    subcategoryId: selectedSubcategory !== 'all' ? selectedSubcategory : undefined,
     requiresPrescription:
       filterPrescription === 'prescription' ? true : filterPrescription === 'otc' ? false : undefined,
   });
@@ -33,6 +37,11 @@ function CategoryContent() {
       setSelectedCategory(categoryParam);
     }
   }, [categoryParam]);
+
+  // Reset subcategory filter whenever the category changes
+  useEffect(() => {
+    setSelectedSubcategory('all');
+  }, [selectedCategory]);
 
   // Filter medicines based on local search
   const filteredMedicines = searchQuery
@@ -102,6 +111,37 @@ function CategoryContent() {
             ))}
           </div>
         </div>
+
+        {/* Subcategory tabs */}
+        {selectedCategory !== 'all' && subcategories.length > 0 && (
+          <div className="mb-6 overflow-x-auto">
+            <div className="flex gap-2 min-w-max pb-2">
+              <button
+                onClick={() => setSelectedSubcategory('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
+                  selectedSubcategory === 'all'
+                    ? 'bg-primary-navy text-white border-primary-navy'
+                    : 'bg-white text-neutral-dark border-neutral-light hover:bg-neutral-light'
+                }`}
+              >
+                {t('filter.all')}
+              </button>
+              {subcategories.map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => setSelectedSubcategory(sub.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
+                    selectedSubcategory === sub.id
+                      ? 'bg-primary-navy text-white border-primary-navy'
+                      : 'bg-white text-neutral-dark border-neutral-light hover:bg-neutral-light'
+                  }`}
+                >
+                  {sub.icon} {language === 'bn' ? sub.nameBn : sub.nameEn}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -196,6 +236,7 @@ function CategoryContent() {
             <button
               onClick={() => {
                 setSelectedCategory('all');
+                setSelectedSubcategory('all');
                 setFilterPrescription('all');
                 setSearchQuery('');
               }}

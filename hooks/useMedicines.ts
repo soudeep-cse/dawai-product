@@ -26,6 +26,7 @@ interface Medicine {
 
 interface UseMedicinesOptions {
   categoryId?: string;
+  subcategoryId?: string;
   requiresPrescription?: boolean;
   featured?: boolean;
   page?: number;
@@ -57,6 +58,7 @@ export function useMedicines(options: UseMedicinesOptions = {}) {
         const params = new URLSearchParams();
 
         if (options.categoryId) params.append('categoryId', options.categoryId);
+        if (options.subcategoryId) params.append('subcategoryId', options.subcategoryId);
         if (options.requiresPrescription !== undefined)
           params.append('requiresPrescription', String(options.requiresPrescription));
         if (options.featured !== undefined) params.append('featured', String(options.featured));
@@ -87,7 +89,7 @@ export function useMedicines(options: UseMedicinesOptions = {}) {
     };
 
     fetchMedicines();
-  }, [options.categoryId, options.requiresPrescription, options.featured, options.page, options.limit]);
+  }, [options.categoryId, options.subcategoryId, options.requiresPrescription, options.featured, options.page, options.limit]);
 
   return { medicines, pagination, loading, error };
 }

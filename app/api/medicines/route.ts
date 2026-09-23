@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
+    const subcategoryId = searchParams.get('subcategoryId');
     const requiresPrescription = searchParams.get('requiresPrescription');
     const featured = searchParams.get('featured');
     const page = parseInt(searchParams.get('page') || '1');
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (categoryId) where.categoryId = categoryId;
+    if (subcategoryId) where.subcategoryId = subcategoryId;
     if (requiresPrescription !== null) where.requiresPrescription = requiresPrescription === 'true';
     if (featured !== null) where.featured = featured === 'true';
 
