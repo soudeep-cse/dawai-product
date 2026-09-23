@@ -45,6 +45,9 @@ COPY --from=builder /app/public ./public
 # Copy Prisma schema for migrations
 COPY prisma ./prisma
 
+# Copy seed scripts (run manually by the deploy workflow on first deploy)
+COPY scripts ./scripts
+
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
