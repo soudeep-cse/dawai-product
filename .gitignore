@@ -27,6 +27,21 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.production.local
+
+# Sensitive data
+*.pem
+*.key
+*.crt
+Caddyfile.local
+
+# Backups & Database
+/backups
+*.sql
+*.db
+
+# SSL Certificates
+/ssl
 
 # vercel
 .vercel
