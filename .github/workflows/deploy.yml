@@ -47,6 +47,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DB_USER,DB_PASSWORD,DB_NAME,JWT_SECRET,NEXT_PUBLIC_APP_URL,OPENAI_API_KEY,SMS_API_KEY
           script: |
             set -e
             echo "🚀 Starting deployment..."
@@ -98,12 +99,13 @@ jobs:
             echo "⏳ Waiting for database..."
             sleep 10
 
-            # Run migrations
+            # Run migrations (fails loudly instead of masking real errors)
             echo "🔄 Running database migrations..."
-            docker compose -f docker-compose.vps.yml exec -T app npx prisma migrate deploy || echo "Migrations already up to date"
+            docker compose -f docker-compose.vps.yml exec -T app npx prisma migrate deploy
 
             # Check if this is first deployment (no admin user exists)
-            ADMIN_EXISTS=$(docker compose -f docker-compose.vps.yml exec -T postgres psql -U ${DB_USER:-dawai_user} -d ${DB_NAME:-dawai} -t -c "SELECT COUNT(*) FROM admin WHERE email='admin@dawai.com';" || echo "0")
+            # Note: Prisma creates tables with quoted PascalCase names, so "Admin" must be quoted
+            ADMIN_EXISTS=$(docker compose -f docker-compose.vps.yml exec -T postgres psql -U "${DB_USER:-dawai_user}" -d "${DB_NAME:-dawai}" -t -c "SELECT COUNT(*) FROM \"Admin\" WHERE email='admin@dawai.com';" | tr -d '[:space:]')
 
             if [ "$ADMIN_EXISTS" -eq "0" ]; then
               echo "👨‍💼 First deployment: seeding database..."
