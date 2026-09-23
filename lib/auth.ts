@@ -6,6 +6,7 @@ const secret = new TextEncoder().encode(
 );
 
 export interface AdminPayload {
+  [key: string]: unknown;
   id: string;
   email?: string;
   username?: string;

@@ -8,10 +8,15 @@ interface Medicine {
   genericNameEn?: string;
   originalPricePerPack: number;
   pricePerPack: number;
+  pricePerUnit: number;
+  packSize: number;
+  dosageForm: string;
   hasDiscount: boolean;
+  discountType?: string;
   discountValue?: number;
   stockQuantity: number;
   primaryImage?: string;
+  requiresPrescription: boolean;
   category: {
     nameBn: string;
     nameEn: string;

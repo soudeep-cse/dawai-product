@@ -36,10 +36,15 @@ export async function GET(request: NextRequest) {
         genericNameEn: true,
         originalPricePerPack: true,
         pricePerPack: true,
+        pricePerUnit: true,
+        packSize: true,
+        dosageForm: true,
         hasDiscount: true,
+        discountType: true,
         discountValue: true,
         stockQuantity: true,
         primaryImage: true,
+        requiresPrescription: true,
         category: {
           select: {
             nameBn: true,

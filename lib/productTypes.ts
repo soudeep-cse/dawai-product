@@ -192,5 +192,5 @@ export function getProductTypesByCategory(categoryName: string): ProductType[] {
 
 // Get unique categories
 export function getProductCategories(): string[] {
-  return [...new Set(PRODUCT_TYPES.map((pt) => pt.categoryName))];
+  return Array.from(new Set(PRODUCT_TYPES.map((pt) => pt.categoryName)));
 }

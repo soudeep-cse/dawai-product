@@ -58,7 +58,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError('');
 
@@ -68,7 +68,7 @@ export default function CheckoutPage() {
     }
 
     const zone = zones.find((z) => z.id === formData.deliveryZoneId);
-    const deliveryCharge = zone?.deliveryCharge || 0;
+    const deliveryCharge = zone?.fee || 0;
 
     const orderData = {
       customerPhone: formData.customerPhone,
@@ -82,7 +82,7 @@ export default function CheckoutPage() {
         pricePerUnit: item.pricePerUnit,
       })),
       totalAmount: getTotal() + deliveryCharge,
-      paymentMethod: formData.paymentMethod,
+      paymentMethod: formData.paymentMethod as 'CASH_ON_DELIVERY' | 'BKASH' | 'NAGAD' | 'CARD',
     };
 
     const result = await createOrder(orderData);
@@ -93,7 +93,7 @@ export default function CheckoutPage() {
   };
 
   const selectedZone = zones.find((z) => z.id === formData.deliveryZoneId);
-  const deliveryCharge = selectedZone?.deliveryCharge || 0;
+  const deliveryCharge = selectedZone?.fee || 0;
   const finalTotal = getTotal() + deliveryCharge;
 
   return (
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
                   <option value="">{language === 'bn' ? 'ডেলিভারি এলাকা নির্বাচন করুন' : 'Select Delivery Zone'}</option>
                   {zones.map((zone) => (
                     <option key={zone.id} value={zone.id}>
-                      {language === 'bn' ? zone.nameBn : zone.nameEn} (+Tk {zone.deliveryCharge})
+                      {language === 'bn' ? zone.nameBn : zone.nameEn} (+Tk {zone.fee})
                     </option>
                   ))}
                 </select>

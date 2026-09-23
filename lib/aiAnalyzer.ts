@@ -63,32 +63,29 @@ export async function analyzePrescriptionImage(
   imageMediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
 ): Promise<PrescriptionAnalysisResult> {
   try {
-    const message = await openai.messages.create({
-      model: 'gpt-4-vision',
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 1024,
       messages: [
         {
           role: 'user',
           content: [
             {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: imageMediaType,
-                data: imageBase64,
-              },
-            },
-            {
               type: 'text',
               text: PRESCRIPTION_ANALYSIS_PROMPT,
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${imageMediaType};base64,${imageBase64}`,
+              },
             },
           ],
         },
       ],
     });
 
-    const responseText =
-      message.content[0].type === 'text' ? message.content[0].text : '';
+    const responseText = completion.choices[0]?.message?.content || '';
 
     // Parse the JSON response
     let analysisResult: PrescriptionAnalysisResult;

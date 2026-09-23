@@ -5,9 +5,9 @@ interface DeliveryZone {
   nameEn: string;
   nameBn: string;
   slug: string;
-  deliveryCharge: number;
-  estimatedDaysMin: number;
-  estimatedDaysMax: number;
+  fee: number;
+  estimatedTimeBn: string;
+  estimatedTimeEn: string;
   isActive: boolean;
 }
 

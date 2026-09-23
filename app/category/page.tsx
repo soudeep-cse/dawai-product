@@ -168,15 +168,16 @@ function CategoryContent() {
               const mockMedicine = {
                 id: medicine.id,
                 name: { bn: medicine.nameBn, en: medicine.nameEn },
-                genericName: medicine.genericNameBn ? { bn: medicine.genericNameBn, en: medicine.genericNameEn } : undefined,
-                price: {
-                  original: Number(medicine.originalPricePerPack),
-                  current: Number(medicine.pricePerPack),
-                },
+                genericName: medicine.genericNameBn && medicine.genericNameEn ? { bn: medicine.genericNameBn, en: medicine.genericNameEn } : undefined,
+                category: 'prescription' as const,
+                subcategory: medicine.category?.nameEn || '',
+                packSize: medicine.packSize,
+                pricePerPack: Number(medicine.pricePerPack),
+                pricePerUnit: Number(medicine.pricePerUnit),
+                dosageForm: medicine.dosageForm,
                 image: medicine.primaryImage || '/images/placeholder.jpg',
                 inStock: medicine.stockQuantity > 0,
                 requiresPrescription: medicine.requiresPrescription,
-                discount: medicine.hasDiscount ? { type: medicine.discountType, value: Number(medicine.discountValue) } : undefined,
               };
               return <MedicineCard key={medicine.id} medicine={mockMedicine} onAddToCart={handleAddToCart} />;
             })}

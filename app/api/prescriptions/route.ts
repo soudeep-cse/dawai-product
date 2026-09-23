@@ -171,7 +171,7 @@ async function analyzeAndUpdatePrescription(
     await prisma.prescription.update({
       where: { id: prescriptionId },
       data: {
-        aiExtractedData: analysisResult,
+        aiExtractedData: analysisResult as any,
         status: 'PENDING_REVIEW',
       },
     });

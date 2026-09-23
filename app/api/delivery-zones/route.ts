@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
         nameEn: true,
         nameBn: true,
         slug: true,
-        deliveryCharge: true,
-        estimatedDaysMin: true,
-        estimatedDaysMax: true,
+        fee: true,
+        estimatedTimeBn: true,
+        estimatedTimeEn: true,
         isActive: true,
       },
       orderBy: {

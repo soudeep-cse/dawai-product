@@ -26,25 +26,79 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = createOrderSchema.parse(body);
 
+    // Fetch medicine details to snapshot into order items
+    const medicineIds = validated.items.map((item) => item.medicineId);
+    const medicines = await prisma.medicine.findMany({
+      where: { id: { in: medicineIds } },
+    });
+    const medicineMap = new Map(medicines.map((m) => [m.id, m]));
+
+    for (const item of validated.items) {
+      if (!medicineMap.has(item.medicineId)) {
+        return NextResponse.json(
+          { success: false, error: `Medicine not found: ${item.medicineId}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    const zone = await prisma.deliveryZone.findUnique({
+      where: { id: validated.deliveryZoneId },
+    });
+
+    if (!zone) {
+      return NextResponse.json(
+        { success: false, error: 'Delivery zone not found' },
+        { status: 400 }
+      );
+    }
+
+    // Find or create customer by phone
+    const customer = await prisma.customer.upsert({
+      where: { phone: validated.customerPhone },
+      update: { name: validated.customerName },
+      create: { phone: validated.customerPhone, name: validated.customerName },
+    });
+
+    const subtotal = validated.items.reduce(
+      (sum, item) => sum + item.pricePerUnit * item.quantity,
+      0
+    );
+    const deliveryFee = Number(zone.fee);
+    const total = subtotal + deliveryFee;
+    const hasSensitiveItem = validated.items.some(
+      (item) => medicineMap.get(item.medicineId)!.isSensitive
+    );
+    const orderNumber = `DW${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
     // Create order with items
     const order = await prisma.order.create({
       data: {
-        customerPhone: validated.customerPhone,
-        customerName: validated.customerName,
-        customerEmail: validated.customerEmail,
-        deliveryZoneId: validated.deliveryZoneId,
-        deliveryAddress: validated.deliveryAddress,
-        totalAmount: validated.totalAmount,
+        orderNumber,
+        customerId: customer.id,
+        phone: validated.customerPhone,
+        address: validated.deliveryAddress,
+        zoneId: validated.deliveryZoneId,
+        status: 'PENDING',
         paymentMethod: validated.paymentMethod as any,
         paymentStatus: 'PENDING',
-        orderStatus: 'PENDING',
+        subtotal,
+        deliveryFee,
+        total,
+        hasSensitiveItem,
         items: {
-          create: validated.items.map((item) => ({
-            medicineId: item.medicineId,
-            quantity: item.quantity,
-            pricePerUnit: item.pricePerUnit,
-            subtotal: item.pricePerUnit * item.quantity,
-          })),
+          create: validated.items.map((item) => {
+            const medicine = medicineMap.get(item.medicineId)!;
+            return {
+              medicineId: item.medicineId,
+              nameBn: medicine.nameBn,
+              nameEn: medicine.nameEn,
+              isSensitive: medicine.isSensitive,
+              quantity: item.quantity,
+              pricePerUnit: item.pricePerUnit,
+              lineTotal: item.pricePerUnit * item.quantity,
+            };
+          }),
         },
       },
       include: {
@@ -53,7 +107,7 @@ export async function POST(request: NextRequest) {
             medicine: true,
           },
         },
-        deliveryZone: true,
+        zone: true,
       },
     });
 
@@ -105,7 +159,7 @@ export async function GET(request: NextRequest) {
               medicine: true,
             },
           },
-          deliveryZone: true,
+          zone: true,
         },
       });
 
@@ -130,14 +184,14 @@ export async function GET(request: NextRequest) {
 
     if (customerPhone) {
       const orders = await prisma.order.findMany({
-        where: { customerPhone },
+        where: { phone: customerPhone },
         include: {
           items: {
             include: {
               medicine: true,
             },
           },
-          deliveryZone: true,
+          zone: true,
         },
         orderBy: { createdAt: 'desc' },
         take: 20,
