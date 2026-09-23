@@ -1,0 +1,37 @@
+{
+  # Email for Let's Encrypt notifications
+  email admin@example.com
+  # Staging Let's Encrypt for testing (remove for production)
+  # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# Replace yourdomain.com with your actual domain
+yourdomain.com www.yourdomain.com {
+  # Reverse proxy to the Next.js app
+  reverse_proxy localhost:3000 {
+    # WebSocket support
+    header_up Connection *upgrade*
+    header_up Upgrade websocket
+
+    # Preserve original headers
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-For {http.request.remote.host}
+    header_up X-Forwarded-Proto {http.request.proto}
+    header_up Host {http.request.host}
+  }
+
+  # Enable gzip compression
+  encode gzip
+
+  # Security headers
+  header / Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  header / X-Content-Type-Options "nosniff"
+  header / X-Frame-Options "SAMEORIGIN"
+  header / X-XSS-Protection "1; mode=block"
+
+  # Log access
+  log {
+    output stdout
+    format json
+  }
+}

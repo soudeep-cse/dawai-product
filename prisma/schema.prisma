@@ -36,9 +36,31 @@ model Category {
   updatedAt     DateTime   @updatedAt
 
   medicines     Medicine[]
+  subcategories Subcategory[]
 
   @@index([slug])
   @@index([isActive, sortOrder])
+}
+
+model Subcategory {
+  id            String     @id @default(cuid())
+  categoryId    String
+  category      Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  slug          String
+  nameBn        String
+  nameEn        String
+  icon          String
+  sortOrder     Int        @default(0)
+
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  medicines     Medicine[]
+
+  @@unique([categoryId, slug])
+  @@index([categoryId])
 }
 
 model Medicine {
@@ -53,7 +75,8 @@ model Medicine {
   // Category
   categoryId          String
   category            Category        @relation(fields: [categoryId], references: [id])
-  subcategory         String?
+  subcategoryId       String?
+  subcategory         Subcategory?    @relation(fields: [subcategoryId], references: [id])
 
   // Pricing with Discount
   packSize            Int
@@ -113,6 +136,7 @@ model Medicine {
   refills             PrescriptionRefill[]
 
   @@index([categoryId, isActive])
+  @@index([subcategoryId])
   @@index([requiresPrescription])
   @@index([stockQuantity])
   @@index([featured, isActive])
