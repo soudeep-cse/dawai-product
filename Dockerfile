@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Prisma engines require OpenSSL on Alpine
+RUN apk add --no-cache openssl
+
 # Copy package files
 COPY package.json package-lock.json ./
 
@@ -23,8 +26,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init and OpenSSL (required by Prisma engines) for proper signal handling
+RUN apk add --no-cache dumb-init openssl
 
 # Copy package files
 COPY package.json package-lock.json ./

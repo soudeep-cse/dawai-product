@@ -18,9 +18,16 @@ export interface PrescriptionAnalysisResult {
   rawAnalysis: string;
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiClient;
+}
 
 const PRESCRIPTION_ANALYSIS_PROMPT = `You are a pharmaceutical AI assistant. Analyze the prescription image and extract medication information.
 
@@ -63,7 +70,7 @@ export async function analyzePrescriptionImage(
   imageMediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
 ): Promise<PrescriptionAnalysisResult> {
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 1024,
       messages: [
