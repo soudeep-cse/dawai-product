@@ -6,18 +6,21 @@ import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useDeliveryZones } from '@/hooks/useDeliveryZones';
+import { useCustomerAddresses } from '@/hooks/useCustomerAuth';
 import { useCheckout } from '@/hooks/useCheckout';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import Link from 'next/link';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getTotal, getSubtotal, clearCart } = useCart();
+  const { items, isHydrated, getTotal, getSubtotal, clearCart } = useCart();
   const { language } = useLanguage();
-  const { customer, isAuthenticated } = useCustomerAuth();
+  const { customer, isAuthenticated, isLoading: authLoading } = useCustomerAuth();
   const { zones } = useDeliveryZones();
+  const { getAddresses, addresses } = useCustomerAddresses();
   const { createOrder, loading, error, orderId } = useCheckout();
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [useNewAddress, setUseNewAddress] = useState(false);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -25,17 +28,25 @@ export default function CheckoutPage() {
     customerEmail: '',
     deliveryZoneId: '',
     deliveryAddress: '',
-    paymentMethod: 'CASH_ON_DELIVERY',
+    paymentMethod: 'COD',
   });
 
   const [validationError, setValidationError] = useState('');
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!items.length) {
+    if (isHydrated && !items.length) {
       router.push('/cart');
     }
-  }, [items, router]);
+  }, [isHydrated, items, router]);
+
+  // Checkout requires login - guests can browse/add to cart freely, but
+  // must log in before actually placing an order.
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login?redirect=/checkout');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   // Pre-fill from logged-in customer profile
   useEffect(() => {
@@ -44,11 +55,43 @@ export default function CheckoutPage() {
         ...prev,
         customerName: prev.customerName || customer.name || '',
         customerPhone: prev.customerPhone || customer.phone || '',
-        deliveryAddress: prev.deliveryAddress || customer.defaultAddress || '',
-        deliveryZoneId: prev.deliveryZoneId || customer.defaultZoneId || '',
       }));
+      getAddresses();
     }
   }, [customer]);
+
+  // Once saved addresses load, pick the default one (or the only one) automatically
+  useEffect(() => {
+    if (addresses.length === 0) {
+      setUseNewAddress(true);
+      return;
+    }
+    const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
+    setSelectedAddressId(defaultAddr.id);
+    setFormData((prev) => ({
+      ...prev,
+      deliveryAddress: defaultAddr.address,
+      deliveryZoneId: defaultAddr.zoneId,
+    }));
+  }, [addresses]);
+
+  const handleSelectSavedAddress = (addr: any) => {
+    setSelectedAddressId(addr.id);
+    setUseNewAddress(false);
+    setFormData((prev) => ({ ...prev, deliveryAddress: addr.address, deliveryZoneId: addr.zoneId }));
+  };
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-neutral-light">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <div className="text-4xl mb-4">⏳</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (success && orderId) {
     return (
@@ -78,16 +121,12 @@ export default function CheckoutPage() {
     e.preventDefault();
     setValidationError('');
 
-    if (!formData.customerName || !formData.customerPhone || !formData.deliveryZoneId || !formData.deliveryAddress) {
+    if (!formData.customerName || !formData.deliveryZoneId || !formData.deliveryAddress) {
       setValidationError(language === 'bn' ? 'সব ফিল্ড পূরণ করুন' : 'Please fill all fields');
       return;
     }
 
-    const zone = zones.find((z) => z.id === formData.deliveryZoneId);
-    const deliveryCharge = zone?.fee || 0;
-
     const orderData = {
-      customerPhone: formData.customerPhone,
       customerName: formData.customerName,
       customerEmail: formData.customerEmail || undefined,
       deliveryZoneId: formData.deliveryZoneId,
@@ -97,8 +136,7 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         pricePerUnit: item.pricePerUnit,
       })),
-      totalAmount: getTotal() + deliveryCharge,
-      paymentMethod: formData.paymentMethod as 'CASH_ON_DELIVERY' | 'BKASH' | 'NAGAD' | 'CARD',
+      paymentMethod: formData.paymentMethod as 'COD' | 'BKASH' | 'NAGAD' | 'CARD',
     };
 
     const result = await createOrder(orderData);
@@ -109,7 +147,7 @@ export default function CheckoutPage() {
   };
 
   const selectedZone = zones.find((z) => z.id === formData.deliveryZoneId);
-  const deliveryCharge = selectedZone?.fee || 0;
+  const deliveryCharge = Number(selectedZone?.fee) || 0;
   const finalTotal = getTotal() + deliveryCharge;
 
   return (
@@ -123,31 +161,16 @@ export default function CheckoutPage() {
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             {validationError && <div className="p-4 bg-red-100 text-red-800 rounded-lg">{validationError}</div>}
             {error && <div className="p-4 bg-red-100 text-red-800 rounded-lg">{error}</div>}
-            {!isAuthenticated && (
-              <div className="bg-primary-teal/10 border border-primary-teal rounded-lg p-4 flex items-center justify-between flex-wrap gap-2">
-                <p className="text-sm text-primary-navy">
-                  {language === 'bn' ? 'আগে থেকে অ্যাকাউন্ট আছে?' : 'Already have an account?'}
-                </p>
-                <Link
-                  href="/login?redirect=/checkout"
-                  className="text-sm font-semibold text-primary-teal hover:text-primary-navy underline"
-                >
-                  {language === 'bn' ? 'লগইন করুন' : 'Login'}
-                </Link>
-              </div>
-            )}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-2xl font-bold text-primary-navy mb-4">
                 {language === 'bn' ? 'ব্যক্তিগত তথ্য' : 'Personal Information'}
-                {isAuthenticated && (
-                  <span className="ml-2 text-sm font-normal text-green-600">
-                    ({language === 'bn' ? 'লগইন করা আছে' : 'Logged in'})
-                  </span>
-                )}
+                <span className="ml-2 text-sm font-normal text-green-600">
+                  ({language === 'bn' ? 'লগইন করা আছে' : 'Logged in'})
+                </span>
               </h2>
               <div className="space-y-4">
                 <input type="text" placeholder={language === 'bn' ? 'আপনার নাম' : 'Full Name'} value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required />
-                <input type="tel" placeholder={language === 'bn' ? 'ফোন নম্বর' : 'Phone Number'} value={formData.customerPhone} onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required />
+                <input type="tel" value={formData.customerPhone} readOnly className="w-full px-4 py-2 border border-neutral-light rounded-lg bg-neutral-light/50 text-neutral-gray cursor-not-allowed" />
                 <input type="email" placeholder={language === 'bn' ? 'ইমেল (ঐচ্ছিক)' : 'Email (Optional)'} value={formData.customerEmail} onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" />
               </div>
             </div>
@@ -155,17 +178,53 @@ export default function CheckoutPage() {
               <h2 className="text-2xl font-bold text-primary-navy mb-4">
                 {language === 'bn' ? 'ডেলিভারি তথ্য' : 'Delivery Information'}
               </h2>
-              <div className="space-y-4">
-                <select value={formData.deliveryZoneId} onChange={(e) => setFormData({ ...formData, deliveryZoneId: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required>
-                  <option value="">{language === 'bn' ? 'ডেলিভারি এলাকা নির্বাচন করুন' : 'Select Delivery Zone'}</option>
-                  {zones.map((zone) => (
-                    <option key={zone.id} value={zone.id}>
-                      {language === 'bn' ? zone.nameBn : zone.nameEn} (+Tk {zone.fee})
-                    </option>
+
+              {addresses.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {addresses.map((addr: any) => (
+                    <label
+                      key={addr.id}
+                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer ${
+                        !useNewAddress && selectedAddressId === addr.id ? 'border-primary-teal bg-primary-teal/5' : 'border-neutral-light'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        checked={!useNewAddress && selectedAddressId === addr.id}
+                        onChange={() => handleSelectSavedAddress(addr)}
+                        className="mt-1"
+                      />
+                      <div>
+                        <p className="font-medium text-primary-navy">
+                          {addr.label} {addr.isDefault && <span className="text-xs text-green-600">({language === 'bn' ? 'ডিফল্ট' : 'Default'})</span>}
+                        </p>
+                        <p className="text-sm text-neutral-gray">{addr.address}</p>
+                        <p className="text-xs text-neutral-gray">{addr.zone?.nameEn}</p>
+                      </div>
+                    </label>
                   ))}
-                </select>
-                <textarea placeholder={language === 'bn' ? 'বিস্তারিত ঠিকানা' : 'Detailed Address'} value={formData.deliveryAddress} onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })} rows={3} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required />
-              </div>
+                  <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer ${useNewAddress ? 'border-primary-teal bg-primary-teal/5' : 'border-neutral-light'}`}>
+                    <input type="radio" checked={useNewAddress} onChange={() => setUseNewAddress(true)} />
+                    <span className="font-medium text-primary-navy">
+                      {language === 'bn' ? '+ নতুন ঠিকানা ব্যবহার করুন' : '+ Use a new address'}
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {(useNewAddress || addresses.length === 0) && (
+                <div className="space-y-4">
+                  <select value={formData.deliveryZoneId} onChange={(e) => setFormData({ ...formData, deliveryZoneId: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required>
+                    <option value="">{language === 'bn' ? 'ডেলিভারি এলাকা নির্বাচন করুন' : 'Select Delivery Zone'}</option>
+                    {zones.map((zone) => (
+                      <option key={zone.id} value={zone.id}>
+                        {language === 'bn' ? zone.nameBn : zone.nameEn} (+Tk {zone.fee})
+                      </option>
+                    ))}
+                  </select>
+                  <textarea placeholder={language === 'bn' ? 'বিস্তারিত ঠিকানা' : 'Detailed Address'} value={formData.deliveryAddress} onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })} rows={3} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required />
+                </div>
+              )}
             </div>
             <button type="submit" disabled={loading} className="w-full px-6 py-3 bg-primary-teal text-white rounded-lg font-semibold hover:bg-primary-mint disabled:opacity-50">
               {loading ? (language === 'bn' ? 'প্রসেস করছে...' : 'Processing...') : (language === 'bn' ? 'অর্ডার দিন' : 'Place Order')}

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import { getCustomerIdFromRequest } from '@/lib/customerAuth';
 
 const prisma = new PrismaClient();
 
 const createOrderSchema = z.object({
-  customerPhone: z.string().min(11),
   customerName: z.string().min(1),
   customerEmail: z.string().email().optional(),
   deliveryZoneId: z.string().min(1),
@@ -17,14 +17,32 @@ const createOrderSchema = z.object({
       pricePerUnit: z.number().min(0),
     })
   ),
-  totalAmount: z.number().min(0),
-  paymentMethod: z.enum(['CASH_ON_DELIVERY', 'BKASH', 'NAGAD', 'CARD']),
+  paymentMethod: z.enum(['COD', 'BKASH', 'NAGAD', 'CARD']),
 });
 
 export async function POST(request: NextRequest) {
   try {
+    // Placing an order requires a logged-in customer - the phone number
+    // comes from their verified token, never from the request body, so a
+    // guest can't impersonate an existing customer's phone number.
+    const customerId = getCustomerIdFromRequest(request);
+    if (!customerId) {
+      return NextResponse.json(
+        { success: false, error: 'Please log in to place an order' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const validated = createOrderSchema.parse(body);
+
+    const existingCustomer = await prisma.customer.findUnique({ where: { id: customerId } });
+    if (!existingCustomer) {
+      return NextResponse.json(
+        { success: false, error: 'Please log in to place an order' },
+        { status: 401 }
+      );
+    }
 
     // Fetch medicine details to snapshot into order items
     const medicineIds = validated.items.map((item) => item.medicineId);
@@ -53,11 +71,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find or create customer by phone
-    const customer = await prisma.customer.upsert({
-      where: { phone: validated.customerPhone },
-      update: { name: validated.customerName },
-      create: { phone: validated.customerPhone, name: validated.customerName },
+    const customer = await prisma.customer.update({
+      where: { id: customerId },
+      data: { name: validated.customerName },
     });
 
     const subtotal = validated.items.reduce(
@@ -76,7 +92,7 @@ export async function POST(request: NextRequest) {
       data: {
         orderNumber,
         customerId: customer.id,
-        phone: validated.customerPhone,
+        phone: customer.phone,
         address: validated.deliveryAddress,
         zoneId: validated.deliveryZoneId,
         status: 'PENDING',

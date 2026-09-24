@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import { getCustomerIdFromRequest } from '@/lib/customerAuth';
 
 const prisma = new PrismaClient();
 
-function getCustomerIdFromToken(request: NextRequest): string | null {
-  const token = request.cookies.get('customer-token')?.value;
-  if (!token) return null;
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    return decoded.customerId;
-  } catch {
-    return null;
-  }
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const customerId = getCustomerIdFromToken(request);
+    const customerId = getCustomerIdFromRequest(request);
     if (!customerId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },

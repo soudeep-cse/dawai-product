@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 interface OrderData {
-  customerPhone: string;
   customerName: string;
   customerEmail?: string;
   deliveryZoneId: string;
@@ -11,8 +10,7 @@ interface OrderData {
     quantity: number;
     pricePerUnit: number;
   }>;
-  totalAmount: number;
-  paymentMethod: 'CASH_ON_DELIVERY' | 'BKASH' | 'NAGAD' | 'CARD';
+  paymentMethod: 'COD' | 'BKASH' | 'NAGAD' | 'CARD';
 }
 
 export function useCheckout() {
@@ -28,6 +26,7 @@ export function useCheckout() {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
