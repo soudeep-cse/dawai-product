@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { serializeMedicine } from '@/lib/serialize';
 
 const prisma = new PrismaClient();
 
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: medicines,
+        data: medicines.map(serializeMedicine),
         pagination: {
           page,
           limit,

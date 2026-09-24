@@ -17,6 +17,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
+  isHydrated: boolean;
   addItem: (item: CartItem) => void;
   updateItem: (medicineId: string, quantity: number) => void;
   removeItem: (medicineId: string) => void;
@@ -97,24 +98,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }, 0);
   };
 
+  // pricePerUnit is already the final (post-discount) sale price set by the
+  // admin - this is only for the "you saved X" display, not for computing
+  // the charged total (that's just getSubtotal()).
   const getDiscountAmount = () => {
     return items.reduce((sum, item) => {
       if (!item.hasDiscount) return sum;
-
-      let discount = 0;
-      if (item.discountType === 'PERCENTAGE') {
-        const totalPrice = item.originalPrice * item.quantity;
-        discount = totalPrice * (item.discountValue! / 100);
-      } else if (item.discountType === 'FIXED_AMOUNT') {
-        discount = item.discountValue! * item.quantity;
-      }
-
-      return sum + discount;
+      const perUnitSavings = Math.max(item.originalPrice - item.pricePerUnit, 0);
+      return sum + perUnitSavings * item.quantity;
     }, 0);
   };
 
   const getTotal = () => {
-    return getSubtotal() - getDiscountAmount();
+    return getSubtotal();
   };
 
   const getItemCount = () => {
@@ -125,6 +121,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider
       value={{
         items,
+        isHydrated,
         addItem,
         updateItem,
         removeItem,

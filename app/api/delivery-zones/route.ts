@@ -27,7 +27,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: zones,
+        // Prisma Decimal fields serialize to strings over JSON, which
+        // silently turns `total + fee` into string concatenation on the
+        // client - convert to a real number here so every consumer gets
+        // an actual number instead of having to remember to coerce it.
+        data: zones.map((zone) => ({ ...zone, fee: Number(zone.fee) })),
       },
       { status: 200 }
     );

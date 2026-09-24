@@ -8,9 +8,21 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 
 export default function CartPage() {
-  const { items, removeItem, updateItem, getSubtotal, getDiscountAmount, getTotal, getItemCount } = useCart();
+  const { items, isHydrated, removeItem, updateItem, getSubtotal, getDiscountAmount, getTotal, getItemCount } = useCart();
   const { language, t } = useLanguage();
   const router = useRouter();
+
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-neutral-light">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <div className="text-4xl mb-4">⏳</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

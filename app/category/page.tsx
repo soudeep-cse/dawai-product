@@ -10,9 +10,11 @@ import { useCategories } from '@/hooks/useCategories';
 import { useSubcategories } from '@/hooks/useSubcategories';
 import { useMedicines } from '@/hooks/useMedicines';
 import { useMedicineSearch } from '@/hooks/useMedicineSearch';
+import { useCart } from '@/contexts/CartContext';
 
 function CategoryContent() {
   const { language, t } = useLanguage();
+  const { addItem } = useCart();
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('cat');
 
@@ -62,8 +64,18 @@ function CategoryContent() {
   }, [searchQuery, search, clearSearch]);
 
   const handleAddToCart = (medicine: any, quantity: number) => {
-    const name = language === 'bn' ? medicine.nameBn : medicine.nameEn;
-    alert(`Added ${quantity} ${name} to cart! (Mock)`);
+    addItem({
+      medicineId: medicine.id,
+      medicineName: medicine.name.en,
+      medicineNameBn: medicine.name.bn,
+      quantity,
+      pricePerUnit: medicine.pricePerUnit,
+      originalPrice: medicine.originalPricePerPack / medicine.packSize,
+      hasDiscount: medicine.hasDiscount,
+      discountType: medicine.discountType,
+      discountValue: medicine.discountValue,
+      image: medicine.image,
+    });
   };
 
   return (
@@ -218,6 +230,10 @@ function CategoryContent() {
                 packSize: medicine.packSize,
                 pricePerPack: Number(medicine.pricePerPack),
                 pricePerUnit: Number(medicine.pricePerUnit),
+                originalPricePerPack: Number(medicine.originalPricePerPack),
+                hasDiscount: medicine.hasDiscount,
+                discountType: medicine.discountType,
+                discountValue: medicine.discountValue ? Number(medicine.discountValue) : undefined,
                 dosageForm: medicine.dosageForm,
                 image: medicine.primaryImage || '/images/placeholder.jpg',
                 inStock: medicine.stockQuantity > 0,
