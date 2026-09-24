@@ -44,6 +44,7 @@ export default function AdminDashboardPage() {
     { icon: '📋', label: 'Manage Medicines', action: 'medicine-list', color: 'from-blue-500 to-blue-600' },
     { icon: '📝', label: 'Prescriptions', action: 'prescriptions', color: 'from-orange-500 to-orange-600' },
     { icon: '📦', label: 'Manage Orders', action: 'orders', color: 'from-purple-500 to-purple-600' },
+    { icon: '🚚', label: 'Delivery Zones', action: 'delivery-zones', color: 'from-cyan-500 to-cyan-600' },
     { icon: '👥', label: 'Manage Users', action: 'users', color: 'from-indigo-500 to-indigo-600' },
     { icon: '⚙️', label: 'Settings', action: 'settings', color: 'from-gray-500 to-gray-600' },
   ];
