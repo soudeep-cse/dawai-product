@@ -35,9 +35,9 @@ yarn-error.log*
 *.crt
 Caddyfile.local
 
-# Backups & Database
+# Backups & Database (but NOT prisma/migrations/**/*.sql - those must be committed)
 /backups
-*.sql
+/backups/*.sql
 *.db
 
 # SSL Certificates

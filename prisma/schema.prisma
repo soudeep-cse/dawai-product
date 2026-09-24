@@ -301,6 +301,7 @@ model Customer {
   id              String              @id @default(cuid())
   phone           String              @unique
   name            String?
+  email           String?
 
   otpCodeHash     String?
   otpExpiresAt    DateTime?
