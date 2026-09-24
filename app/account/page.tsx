@@ -5,23 +5,30 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useCustomerOrders, useCustomerPrescriptions, useCustomerAddresses } from '@/hooks/useCustomerAuth';
+import { useDeliveryZones } from '@/hooks/useDeliveryZones';
 
 type TabType = 'profile' | 'orders' | 'prescriptions' | 'addresses';
 
 export default function CustomerAccountPage() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { customer, isAuthenticated, logout } = useCustomerAuth();
+  const { customer, isAuthenticated, logout, updateProfile } = useCustomerAuth();
   const { getOrders, orders } = useCustomerOrders();
   const { getPrescriptions, prescriptions } = useCustomerPrescriptions();
-  const { getAddresses, addresses } = useCustomerAddresses();
+  const { getAddresses, addAddress, updateAddress, deleteAddress, addresses } = useCustomerAddresses();
+  const { zones } = useDeliveryZones();
 
   const [activeTab, setActiveTab] = useState<TabType>('profile');
+  const [profileName, setProfileName] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressForm, setAddressForm] = useState({ label: '', address: '', zoneId: '', isDefault: false });
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push('/login?redirect=/account');
     }
   }, [isAuthenticated, router]);
 
@@ -37,9 +44,53 @@ export default function CustomerAccountPage() {
     }
   }, [activeTab, customer]);
 
+  useEffect(() => {
+    if (customer) {
+      setProfileName(customer.name || '');
+    }
+  }, [customer]);
+
   const handleLogout = async () => {
     await logout();
     router.push('/');
+  };
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    await updateProfile({ name: profileName });
+    setSavingProfile(false);
+  };
+
+  const resetAddressForm = () => {
+    setAddressForm({ label: '', address: '', zoneId: '', isDefault: false });
+    setEditingAddressId(null);
+    setShowAddressForm(false);
+  };
+
+  const handleEditAddress = (addr: any) => {
+    setAddressForm({
+      label: addr.label,
+      address: addr.address,
+      zoneId: addr.zoneId,
+      isDefault: addr.isDefault,
+    });
+    setEditingAddressId(addr.id);
+    setShowAddressForm(true);
+  };
+
+  const handleSubmitAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingAddressId) {
+      await updateAddress(editingAddressId, addressForm);
+    } else {
+      await addAddress(addressForm);
+    }
+    resetAddressForm();
+  };
+
+  const handleDeleteAddress = async (id: string) => {
+    if (!confirm('Delete this address?')) return;
+    await deleteAddress(id);
   };
 
   if (!isAuthenticated || !customer) return null;
@@ -81,9 +132,20 @@ export default function CustomerAccountPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                  <input type="text" defaultValue={customer.name || ''} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
                 </div>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Save</button>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={savingProfile}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg"
+                >
+                  {savingProfile ? 'Saving...' : 'Save'}
+                </button>
               </div>
             )}
 
@@ -130,14 +192,79 @@ export default function CustomerAccountPage() {
 
             {activeTab === 'addresses' && (
               <div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => (showAddressForm ? resetAddressForm() : setShowAddressForm(true))}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                  >
+                    {showAddressForm ? 'Cancel' : '+ Add Address'}
+                  </button>
+                </div>
+
+                {showAddressForm && (
+                  <form onSubmit={handleSubmitAddress} className="border rounded-lg p-4 mb-4 space-y-3 bg-gray-50">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Label (e.g. Home, Office)"
+                      value={addressForm.label}
+                      onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <textarea
+                      required
+                      placeholder="Full address"
+                      value={addressForm.address}
+                      onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      rows={2}
+                    />
+                    <select
+                      required
+                      value={addressForm.zoneId}
+                      onChange={(e) => setAddressForm({ ...addressForm, zoneId: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    >
+                      <option value="">Select delivery zone</option>
+                      {zones.map((z) => (
+                        <option key={z.id} value={z.id}>{z.nameEn}</option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={addressForm.isDefault}
+                        onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })}
+                      />
+                      Set as default address
+                    </label>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+                      {editingAddressId ? 'Save Changes' : 'Add Address'}
+                    </button>
+                  </form>
+                )}
+
                 {addresses.length === 0 ? (
                   <p className="text-center text-gray-600">No addresses saved</p>
                 ) : (
                   <div className="space-y-4">
                     {addresses.map((addr: any) => (
-                      <div key={addr.id} className="border rounded-lg p-4">
-                        <p className="font-medium">{addr.label}</p>
-                        <p className="text-sm text-gray-600">{addr.address}</p>
+                      <div key={addr.id} className="border rounded-lg p-4 flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">
+                            {addr.label} {addr.isDefault && <span className="text-xs text-green-600">(Default)</span>}
+                          </p>
+                          <p className="text-sm text-gray-600">{addr.address}</p>
+                          <p className="text-xs text-gray-500">{addr.zone?.nameEn}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleEditAddress(addr)} className="text-sm text-blue-600 hover:text-blue-700">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteAddress(addr.id)} className="text-sm text-red-600 hover:text-red-700">
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

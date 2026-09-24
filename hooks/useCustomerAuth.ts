@@ -5,7 +5,7 @@ export function useCustomerOTP() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const sendOTP = async (phone: string) => {
+  const sendOTP = async (phone: string, email?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -14,7 +14,7 @@ export function useCustomerOTP() {
       const response = await fetch('/api/auth/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, email: email || undefined }),
       });
 
       const result = await response.json();
@@ -119,9 +119,74 @@ export function useCustomerAddresses() {
     }
   };
 
+  const updateAddress = async (
+    id: string,
+    data: Partial<{ label: string; address: string; zoneId: string; isDefault: boolean }>
+  ) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/customers/addresses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAddresses((prev) => prev.map((a) => (a.id === id ? result.data : a)));
+        return { success: true, data: result.data };
+      } else {
+        setError(result.error || 'Failed to update address');
+        return { success: false, error: result.error };
+      }
+    } catch (err: any) {
+      const errorMsg = 'Network error while updating address';
+      setError(errorMsg);
+      console.error('Update address error:', err);
+      return { success: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAddress = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/customers/addresses/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAddresses((prev) => prev.filter((a) => a.id !== id));
+        return { success: true };
+      } else {
+        setError(result.error || 'Failed to delete address');
+        return { success: false, error: result.error };
+      }
+    } catch (err: any) {
+      const errorMsg = 'Network error while deleting address';
+      setError(errorMsg);
+      console.error('Delete address error:', err);
+      return { success: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     getAddresses,
     addAddress,
+    updateAddress,
+    deleteAddress,
     addresses,
     loading,
     error,
