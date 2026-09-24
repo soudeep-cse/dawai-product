@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 
 const sendOtpSchema = z.object({
   phone: z.string().min(11).regex(/^01[0-9]/),
+  email: z.string().email().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -31,15 +32,18 @@ export async function POST(request: NextRequest) {
       customer = await prisma.customer.create({
         data: {
           phone: validated.phone,
+          email: validated.email,
           otpCodeHash: otpHash,
           otpExpiresAt,
         },
       });
     } else {
-      // Update existing customer with new OTP
+      // Update existing customer with new OTP (only set email if provided
+      // and not already set, don't overwrite an existing email)
       customer = await prisma.customer.update({
         where: { phone: validated.phone },
         data: {
+          email: customer.email || validated.email,
           otpCodeHash: otpHash,
           otpExpiresAt,
         },

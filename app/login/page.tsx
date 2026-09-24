@@ -15,6 +15,7 @@ function CustomerLoginForm() {
   const { sendOTP, loading: otpLoading, error: otpError, message: otpMessage } = useCustomerOTP();
 
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [submitting, setSubmitting] = useState(false);
@@ -42,6 +43,8 @@ function CustomerLoginForm() {
       subtitle: 'Enter your phone number to continue',
       phone: 'Phone Number',
       enterPhone: '01712345678',
+      email: 'Email (Optional)',
+      enterEmail: 'you@example.com',
       sendOTP: 'Send OTP',
       otpSent: 'OTP sent successfully',
       otpSubtitle: 'Enter the 6-digit code sent to your phone',
@@ -64,6 +67,8 @@ function CustomerLoginForm() {
       subtitle: 'চালিয়ে যেতে আপনার ফোন নম্বর প্রবেশ করুন',
       phone: 'ফোন নম্বর',
       enterPhone: '01712345678',
+      email: 'ইমেল (ঐচ্ছিক)',
+      enterEmail: 'you@example.com',
       sendOTP: 'OTP পাঠান',
       otpSent: 'OTP সফলভাবে পাঠানো হয়েছে',
       otpSubtitle: 'আপনার ফোনে পাঠানো 6-অঙ্কের কোড প্রবেশ করুন',
@@ -94,7 +99,7 @@ function CustomerLoginForm() {
     }
 
     setError(null);
-    const result = await sendOTP(phone);
+    const result = await sendOTP(phone, email);
 
     if (result.success) {
       setStep('otp');
@@ -171,6 +176,19 @@ function CustomerLoginForm() {
                     setError(null);
                   }}
                   placeholder={t.enterPhone}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t.email}
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t.enterEmail}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
