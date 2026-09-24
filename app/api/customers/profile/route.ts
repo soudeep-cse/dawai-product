@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
+  email: z.string().email().optional(),
   defaultZoneId: z.string().optional(),
   defaultAddress: z.string().min(5).optional(),
 });
@@ -69,6 +70,7 @@ export async function PATCH(request: NextRequest) {
       where: { id: customerId },
       data: {
         name: validated.name,
+        email: validated.email,
         defaultZoneId: validated.defaultZoneId,
         defaultAddress: validated.defaultAddress,
       },

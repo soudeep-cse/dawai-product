@@ -3,6 +3,7 @@ import { useState } from 'react';
 interface OrderData {
   customerName: string;
   customerEmail?: string;
+  deliveryPhone: string;
   deliveryZoneId: string;
   deliveryAddress: string;
   items: Array<{

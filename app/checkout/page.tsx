@@ -121,7 +121,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     setValidationError('');
 
-    if (!formData.customerName || !formData.deliveryZoneId || !formData.deliveryAddress) {
+    if (!formData.customerName || !formData.customerPhone || !formData.deliveryZoneId || !formData.deliveryAddress) {
       setValidationError(language === 'bn' ? 'সব ফিল্ড পূরণ করুন' : 'Please fill all fields');
       return;
     }
@@ -129,6 +129,7 @@ export default function CheckoutPage() {
     const orderData = {
       customerName: formData.customerName,
       customerEmail: formData.customerEmail || undefined,
+      deliveryPhone: formData.customerPhone,
       deliveryZoneId: formData.deliveryZoneId,
       deliveryAddress: formData.deliveryAddress,
       items: items.map((item) => ({
@@ -170,7 +171,7 @@ export default function CheckoutPage() {
               </h2>
               <div className="space-y-4">
                 <input type="text" placeholder={language === 'bn' ? 'আপনার নাম' : 'Full Name'} value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required />
-                <input type="tel" value={formData.customerPhone} readOnly className="w-full px-4 py-2 border border-neutral-light rounded-lg bg-neutral-light/50 text-neutral-gray cursor-not-allowed" />
+                <input type="tel" placeholder={language === 'bn' ? 'ফোন নম্বর (ডেলিভারির জন্য)' : 'Phone Number (for delivery contact)'} value={formData.customerPhone} onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" required />
                 <input type="email" placeholder={language === 'bn' ? 'ইমেল (ঐচ্ছিক)' : 'Email (Optional)'} value={formData.customerEmail} onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })} className="w-full px-4 py-2 border border-neutral-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-teal" />
               </div>
             </div>

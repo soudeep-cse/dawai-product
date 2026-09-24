@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 const createOrderSchema = z.object({
   customerName: z.string().min(1),
   customerEmail: z.string().email().optional(),
+  deliveryPhone: z.string().min(11),
   deliveryZoneId: z.string().min(1),
   deliveryAddress: z.string().min(5),
   items: z.array(
@@ -22,9 +23,11 @@ const createOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Placing an order requires a logged-in customer - the phone number
-    // comes from their verified token, never from the request body, so a
-    // guest can't impersonate an existing customer's phone number.
+    // Placing an order requires a logged-in customer - customerId comes
+    // only from their verified token, never from the request body, so a
+    // guest can't place an order under someone else's account. The
+    // delivery contact phone is separate (Google logins have no phone at
+    // all) and is just where the rider calls, not an identity claim.
     const customerId = getCustomerIdFromRequest(request);
     if (!customerId) {
       return NextResponse.json(
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
       data: {
         orderNumber,
         customerId: customer.id,
-        phone: customer.phone,
+        phone: validated.deliveryPhone,
         address: validated.deliveryAddress,
         zoneId: validated.deliveryZoneId,
         status: 'PENDING',

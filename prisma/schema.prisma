@@ -299,12 +299,10 @@ model Admin {
 
 model Customer {
   id              String              @id @default(cuid())
-  phone           String              @unique
+  firebaseUid     String?             @unique
+  phone           String?             @unique
   name            String?
-  email           String?
-
-  otpCodeHash     String?
-  otpExpiresAt    DateTime?
+  email           String?             @unique
 
   defaultAddress  String?
   defaultZoneId   String?

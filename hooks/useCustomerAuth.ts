@@ -1,55 +1,5 @@
 import { useState } from 'react';
 
-export function useCustomerOTP() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const sendOTP = async (phone: string, email?: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      setMessage(null);
-
-      const response = await fetch('/api/auth/otp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, email: email || undefined }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setMessage('OTP sent successfully. Valid for 10 minutes.');
-        return { success: true, expiresIn: result.data.expiresIn };
-      } else {
-        setError(result.error || 'Failed to send OTP');
-        return { success: false, error: result.error };
-      }
-    } catch (err: any) {
-      const errorMsg = 'Network error while sending OTP';
-      setError(errorMsg);
-      console.error('Send OTP error:', err);
-      return { success: false, error: errorMsg };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearMessages = () => {
-    setError(null);
-    setMessage(null);
-  };
-
-  return {
-    sendOTP,
-    loading,
-    error,
-    message,
-    clearMessages,
-  };
-}
-
 export function useCustomerAddresses() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

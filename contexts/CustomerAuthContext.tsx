@@ -4,7 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface CustomerData {
   id: string;
-  phone: string;
+  phone: string | null;
+  email?: string | null;
   name?: string;
   defaultAddress?: string;
   defaultZoneId?: string;
@@ -14,7 +15,7 @@ interface CustomerAuthContextType {
   customer: CustomerData | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phone: string, otp: string) => Promise<boolean>;
+  login: (idToken: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: Partial<CustomerData>) => Promise<boolean>;
 }
@@ -39,6 +40,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
         setCustomer({
           id: result.data.id,
           phone: result.data.phone,
+          email: result.data.email,
           name: result.data.name,
           defaultAddress: result.data.defaultAddress,
           defaultZoneId: result.data.defaultZoneId,
@@ -51,14 +53,14 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const login = async (phone: string, otp: string): Promise<boolean> => {
+  const login = async (idToken: string): Promise<boolean> => {
     try {
       setIsLoading(true);
 
-      const response = await fetch('/api/auth/otp/verify', {
+      const response = await fetch('/api/auth/firebase-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ idToken }),
         credentials: 'include',
       });
 
@@ -68,6 +70,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
         setCustomer({
           id: result.data.customerId,
           phone: result.data.phone,
+          email: result.data.email,
           name: result.data.name,
         });
         return true;
